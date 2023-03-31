@@ -4,36 +4,55 @@ function [peaks] = S2_PeaksetFinder(xdata, ydata, offset_input, baseparams, anal
 %%% Extensively modified by Nikita Khlystov
 %%% Latest edit 12/16
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    S2 PART I: Find primary and secondary peaks   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%% Find primary and secondary peaks
 
-% minpkht_thres = min(ydata) + 0.5*(max(ydata) - min(ydata));               
+% Start by doing the same baseline analysis done in S1_PeakAnalysis_time;
+% filter baseline, 
+diff_threshold = baseparams(5);
+med_filt_wd = baseparams(6);
+bs_dev_thres = baseparams(7);
 
-idx = find(abs(diff(ydata))<baseparams(5));                                                  
+% Remove fast varying points to get baseline (i.e. points with a derivative 
+% smaller than a certain threshold value)
+idx = find(abs(diff(ydata)) < diff_threshold);                                                  
 
-% ignore the flat points found over the anti-node
-mf_ydata_thres=medfilt1(ydata(idx), baseparams(6));
-idx_f=find(abs(ydata(idx)-mf_ydata_thres)< baseparams(7));
-idx=idx(idx_f);
-%ydata_thres(idx) = smooth(ydata(idx), 2);
+% Using the baseline indices (i.e. portions there the derivative of 
+% the signal is flat) from before, uses a median filter to extract a 
+% smoothed baseline. In particular, this just selects for sections of
+% contiguous baseline, rather than flat parts above the antinodes
+mf_ydata_thres = medfilt1(ydata(idx), med_filt_wd);
+
+% Find points within a small distance of the established baseline
+idx_f = abs(ydata(idx) - mf_ydata_thres) < bs_dev_thres;
+idx = idx(idx_f);
+
+% ydata_thres(idx) = smooth(ydata(idx), 2);
 % filter extreme outliers.
 % in density measurement flat part forms in outliers
 
 idx=[idx; length(ydata)];
 
-% if no flat part is found
-if length(idx)<2
+% If no flat baseline section is found, then we can't reliably detect
+% peaks. Return without any peak data
+if length(idx) < 2
     peaks = [];
-    %disp('no flat part found');
     return
 end
 
-ydata_thres=interp1(xdata(idx), ydata(idx), xdata);
+% Interpolate baseline y values across all x values
+ydata_thres = interp1(xdata(idx), ydata(idx), xdata);
 
-% locally smooth ydata again
-ydata=smooth(ydata, 3);
-offset_input = (max(ydata) - min(ydata))*0.5;
-minpkht_thres=ydata_thres-offset_input;
+% Locally smooth ydata
+ydata = smooth(ydata, 3);
 
+% Like when finding peaks, provide an offset (this time defined from the
+% ydata itself) that functions as a threshold below which peaks will be
+% detected
+offset_input = (max(ydata) - min(ydata)) * 0.5;
+minpkht_thres = ydata_thres-offset_input;
+
+% Plot the data for this peak segment as well as the threshold if in
+% analysis mode
 if analysismode == 0
     hold off;
     figure(1);
@@ -44,6 +63,13 @@ if analysismode == 0
     input('go');
 end
 
+
+
+% START HERE ON MONDAY!!!!!!!!!!!!!!!!!!!!!!!
+
+
+
+% 
 repeatflag = 1;
 while(repeatflag == 1)
     pkidx = find(ydata < minpkht_thres);                                                  % find all freq values that pass this threshold - these are the main peaks

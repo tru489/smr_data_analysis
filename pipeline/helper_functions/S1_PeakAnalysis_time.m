@@ -1,7 +1,7 @@
 function [data, analysis_params, elapsed_time] = ...
     S1_PeakAnalysis_time(x, t, datalast, sectionnumber, analysisparams, ...
     estimated_datapoints, elapsed_time)
-
+    %% Setup
     global left_base
     global right_base
     global segmentbound
@@ -12,7 +12,8 @@ function [data, analysis_params, elapsed_time] = ...
     analysis_params.analysismode = analysisparams.analysismode;
     analysis_params.dispprogress = analysisparams.dispprogress;
     vv = zeros(length(x),1);
-    % clear all S1 variables
+    
+    % Clear all S1 variables
     pkidx_poly = [];
     apkidx_poly = [];
     pk_t = [];
@@ -30,13 +31,14 @@ function [data, analysis_params, elapsed_time] = ...
     sectnum = [];
     pkorder = [];
     
-    %t=t-t(1);
-    
+    % If data is very short, move on and just record a row of 0 data for
+    % this function call
     if length(x) < 10
         %disp('No GOOD peak found in this section: data Length< 10');
         data=zeros(13,1); 
         %disp(' '); 
-        elapsed_time = elapsed_time + t(end);  return;
+        elapsed_time = elapsed_time + t(end);  
+        return;
     end
     
     %% Estimated data points per frequency peak & noise in system
@@ -47,11 +49,12 @@ function [data, analysis_params, elapsed_time] = ...
     noise_data_keep = rmoutliers(diff(x), 'percentiles', [1,99]);
     analysis_params.estimated_noise = std(noise_data_keep) * 3;
     
-    % Set parameters for savitsky-golay filter for 
-    % This will make default length of 5 for 50 idx transits
+    % Set savitsky-golay filter length. Based on the estimated datapoint
+    % number required to detect peaks.
+    % This will make default length of 5 for 50 idx transits.
     sgolay_length_idx = 1;
-    sgolay_length = ...
-        2 * round(sgolay_length_idx * (estimated_datapoints / 50)) + 1;
+    sgolay_length = 2 * round(sgolay_length_idx * ...
+        (estimated_datapoints / 50)) + 1;
     
     %fprintf(['sgolay length for datapoints per transit of %4.0f', ...
     % ' will be %2.0f', estimated_datapoints, sgolay_length); disp(' ');
@@ -77,7 +80,7 @@ function [data, analysis_params, elapsed_time] = ...
     % analysis_params.estimated_noise = measured_noise;
     end    
     
-    % Filter entire x data using savitsky-golay filter
+    % Smooth entire x data using savitsky-golay filter
     if sgolay_length > 3
         ydata = sgolayfilt(x, 3, sgolay_length); 
     else
@@ -86,19 +89,19 @@ function [data, analysis_params, elapsed_time] = ...
     xdata = (1:length(ydata))';
     %disp('Finding peak indices...')
     
-    %% Baseline selection
+    %% Baseline selection parameters
     % ——————————————————Optimize using below parameters——————————————————
     % Find extremely flat part of curve (sys1)
-    analysis_params.diff_threshold = 0.005;
+    diff_threshold_param = 0.005;
     % Window of median filter, which removes the flat part in the anti-node
-    analysis_params.med_filt_wd = 200;
+    med_filt_wd_param = 200;
     % Baseline dev_threshold; threshold used to remove the flat part in 
     % the anti-node
-    analysis_params.bs_dev_thres = 0.5;
+    bs_dev_thres_param = 0.5;
     % Distance over which is a unique 2nd mode peaks, default 200
-    analysis_params.unqPeakDist = 150;
+    unqPeakDist_param = 150;
     % Baseline offset to select for peaks
-    analysis_params.offset_input = 5;
+    offset_input_param = 5;
     
     % ——————————————————USER ADJUSTABLE——————————————————
     % Below is assuming 400 data points per transit
@@ -113,144 +116,187 @@ function [data, analysis_params, elapsed_time] = ...
     % Number of points searching for baseline collection
     analysis_params.winsize = 150;
 
-    %% Compensate for number of data points & noise leve
-    % Added 03/22/2019
-    % Threshold below which to remove the fast varying points 
+    %% Compensate for number of data points & noise level
+    % Added 03/22/2019; provides corrections for noise in data and baseline
+    % for peak detection
+
+    % Derivative threshold below which to remove points not in flat,
+    % baseline parts of the signal (in order to select for the baseline)
     analysis_params.diff_threshold = ...
-        analysis_params.diff_threshold * ...
+        diff_threshold_param * ...
         ((analysis_params.estimated_noise / 0.1) ^ (1/2)) / ...
         (estimated_datapoints / 400);
+
+    % Size of median filter used to smooth baseline signal
     analysis_params.med_filt_wd = ...
-        round(analysis_params.med_filt_wd * estimated_datapoints/400);
-    analysis_params.bs_dev_thres = ...
-        analysis_params.bs_dev_thres * ...
-        ((analysis_params.estimated_noise / 0.1) ^ (1/2));
-    analysis_params.unqPeakDist = ...
-        round(analysis_params.unqPeakDist * estimated_datapoints / 400);
+        round(med_filt_wd_param * estimated_datapoints/400);
     
-    % Remove fast varying points to get baseline. i.e., remove cell 
-    % frequency  
+    % Distance within the baseline within which to search for points to
+    % establish baseline signal for interpolation
+    analysis_params.bs_dev_thres = ...
+        bs_dev_thres_param * ...
+        ((analysis_params.estimated_noise / 0.1) ^ (1/2));
+    
+    % Sets an offset from the baseline value. Signal values that are larger
+    % than this offset value will be marked as peaks for future analysis
+    analysis_params.offset_input = offset_input_param;
+
+    % Minimum allowed distance between unique peaks
+    analysis_params.unqPeakDist = ...
+        round(unqPeakDist_param * estimated_datapoints / 400);
+    
+    %% Filter to extract baseline for peak detection
+    % Remove fast varying points to get baseline (i.e. points with a
+    % derivative smaller than a certain threshold value)
     idx = find(abs(diff(ydata)) < analysis_params.diff_threshold);                                                
     
-    % ignore the flat points found over the anti-node
-    mf_ydata_thres=medfilt1(ydata(idx), analysis_params.med_filt_wd);
+    % Using the baseline indices (i.e. portions there the derivative of 
+    % the signal is flat) from before, uses a median filter to extract a 
+    % smoothed baseline. In particular, this just selects for sections of
+    % contiguous baseline, rather than flat parts above the antinodes
+    mf_ydata_thres = medfilt1(ydata(idx), analysis_params.med_filt_wd);
     
+    % Find points within a small distance of the established baseline
+    idx_f = abs(ydata(idx) - mf_ydata_thres) < ...
+        analysis_params.bs_dev_thres;
+    idx = idx(idx_f);
     
-    idx_f=find(abs(ydata(idx)-mf_ydata_thres)<analysis_params.bs_dev_thres);
+    % Interpolate baseline y values across all x values. Note that this is
+    % interpolation to establish a baseline, accounting for the fact that
+    % the baseline could have a nonzero slope over time
+    ydata_thres = interp1(xdata(idx), ydata(idx), xdata);
+
+    % Apply set offset to interpolated baseline. This offset will serve as
+    % a threshold for peak detection
+    ydata_thres = ydata_thres-analysis_params.offset_input;
     
-    idx=idx(idx_f);
+    % Find which y data points are less than the threshold. These points
+    % that deviate significantly from the baseline are the main peaks
+    idx = find(ydata < ydata_thres);
     
-    ydata_thres=interp1(xdata(idx), ydata(idx), xdata);
-    
-    size(ydata_thres);
-    
-    ydata_thres=ydata_thres-analysis_params.offset_input;
-    
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    idx = find(ydata < ydata_thres);                                                  % find all y_diff values that pass this threshold - these are the main peaks
-    
+    %% Peak detection
     repeatflag = 1;
     while(repeatflag == 1)
-        
         if ~isempty(idx)
-            idx_ends = find(abs(diff(idx)) > 1);                                                    % find all breaks in y_diff indices; each segment is a peak of interest, with end on idx_end and start on (idx_end + 1)
-            idx_ends = [0 idx_ends' length(idx)];                                                   % cap the beginning and end of idx with markers
+            % Find all breaks in y_diff indices; that is, contiguous 
+            % regions where the signal deviates significantly from the 
+            % baseline. Each segment is a peak of interest, with end on 
+            % idx_end and start on (idx_end + 1). 
+            idx_ends = find(abs(diff(idx)) > 1);
+
+            % Cap the beginning and end of idx with markers
+            idx_ends = [0 idx_ends' length(idx)];
     
-            peak_idx = zeros(1,length(idx_ends) - 1);                                               % set empty matrix for loop efficiency
-    
+            % Preallocate peak index array (indices in ydata where the
+            % peaks occur)
+            peak_idx = zeros(1,length(idx_ends) - 1);
             for i = 1:length(idx_ends) - 1
-                ydata_segment = ydata(idx(idx_ends(i)+1:idx_ends(i + 1)));                        % focus on the piece of y_diff between two consecutive idx_end markers
-                segment_idx_max = min(find(ydata_segment == min(ydata_segment)));                      % find index of the maximum deviation, i.e. the apex within the piece
-                global_idx_max = idx(idx_ends(i) + 1) + segment_idx_max - 1;
-                peak_idx(i) = global_idx_max(1);                                                       % convert the apex index to the global index within y_diff      
+                % Extract y data corresponding to current peak
+                ydata_segment = ...
+                    ydata(idx((idx_ends(i) + 1):idx_ends(i+1)));
+                
+                % Find index of the maximum deviation, i.e. the apex of the
+                % peak identified within this deviating data segment
+                segment_idx_max = ...
+                    min(find(ydata_segment == min(ydata_segment)));
+                
+                % Convert the apex index (index local to data segment in 
+                % which we are analyzing) to the global index within y_diff
+                global_idx_max = idx(idx_ends(i) + 1) + ...
+                    segment_idx_max - 1;
+                peak_idx(i) = global_idx_max(1);  
             end
             
-            unique_peaks = diff([peak_idx length(xdata)]) > analysis_params.unqPeakDist;
-            peak_idx = peak_idx(unique_peaks);                                                      % which for single-cell 2nd-mode peaks are 3n+1, and thus we are saving the each third peak
-                                                                                                    %%% now we have the global indices of the main peaks in this segment of
-                                                                                                    %%% the entire frequency data 
+            % Filter for unique peaks, based on unqPeakDist parameter.
+            % Ensures that peaks that are overlapping aren't saved.
+            % length(xdata) is added to the end of the array to make the
+            % same size as peak_idx
+            unique_peaks = diff([peak_idx, length(xdata)]) > analysis_params.unqPeakDist;
+            peak_idx = peak_idx(unique_peaks);
+                                
+            % Now we have the global indices of the main peaks in this 
+            % segment of the entire frequency data... iterate until we 
+            % get all of the peaks in the data 
             repeatflag = 0;
             %disp('...Done.')
         else
-            %disp('No peak found in this section');
+            % No peak is found in this section. No need to continue
+            % iterating since there is no peak data.
             repeatflag = 0;
-            data=zeros(13,1); 
-            elapsed_time = elapsed_time + t(end);  
+            data = zeros(13,1); 
+            elapsed_time = elapsed_time + t(end); 
             return;
         end
     end
     
+    %% Setup for data segmentation
     
-    
-    %disp(' ')
-    %disp('Segmentizing the dataset...')
-    
+    % Create array of intermediate indices between each peak
     segmentbound = zeros(1,length(peak_idx));
-    
-    segmentbound(1) = peak_idx(1) + round((peak_idx(2) - peak_idx(1))/2);
+    segmentbound(1) = peak_idx(1) + round((peak_idx(2) - peak_idx(1)) / 2);
     for i = 2:length(peak_idx)-1
-        segmentbound(i) = peak_idx(i) + round((peak_idx(i+1) - peak_idx(i))/2);
+        segmentbound(i) = peak_idx(i) + ...
+            round((peak_idx(i+1) - peak_idx(i)) / 2);
     end
     segmentbound(end) = xdata(end);
     segmentbound = [1 segmentbound];
+    
     segment_med_wd = round(median(diff(segmentbound))/10);
     
     set(gca,'XLim',[0 length(xdata)]);
     set(gca,'YLim',[min(ydata) - 10 max(ydata) + 10]);
     %disp('Done.')
     
-    %%=======================================================================
-    %% ==================== INDIVIDUAL PEAK ANALYSIS================ %%
-    %% ==============================================================%%
-    % disp(' ')
-    % disp('Beginning individual peak analysis.')
+    %% Segmentizing the dataset
     i = 0;
     
-    %-------------- Segmentizing the dataset -------------------------%%
-    segment_threshold=200; %number of data points from peaks. 
-    segment_threshold = segment_threshold*estimated_datapoints/400;
-    sidelength = 3000; %number of more indices on each side of baseline 
+    segment_threshold = 200; % Number of data points from peaks 
+    segment_threshold = segment_threshold * estimated_datapoints / 400;
+    sidelength = 3000; % Number of more indices on each side of baseline 
      
-    for i=1:length(peak_idx)
-    
-        if min(abs(peak_idx(i)-segmentbound(i)), abs(peak_idx(i)-segmentbound(i+1))) > segment_threshold
-        
-            local_xdata = xdata(segmentbound(i):segmentbound(i + 1)) - xdata(segmentbound(i)) + 1;
+    for i = 1:length(peak_idx)
+        % If distance of peak to previous or next boundary between two
+        % adjacent peaks (halfway between the peaks; from segmentbound) is
+        % larger than the set value, then we have enough datapoints for
+        % that peak to proceed
+        dist_to_prev_boundary = abs(peak_idx(i) - segmentbound(i));
+        dist_to_next_boundary = abs(peak_idx(i) - segmentbound(i+1));
+        if min(dist_to_prev_boundary, dist_to_next_boundary) ...
+                > segment_threshold
+            % Slice x and y data to get segment containing peak. x data is
+            % local values relative to the beginning of this segment
+            local_xdata = xdata(segmentbound(i):segmentbound(i + 1)) - ...
+                xdata(segmentbound(i)) + 1;
             local_ydata = ydata(segmentbound(i):segmentbound(i + 1));
         
-    
-        baseparams = [analysis_params.stdevmultiplier analysis_params.diffmultiplier analysis_params.edgethres analysis_params.winsize analysis_params.diff_threshold analysis_params.med_filt_wd analysis_params.bs_dev_thres];
-        
-        %%% Identify primary and secondary peaks within segment:
-    %     disp(' ')
-    %     disp('Locating segment peaks...')
-        peaks = S2_PeaksetFinder(local_xdata, local_ydata, analysis_params.offset_input, baseparams, analysis_params.analysismode);  
-    %     disp('...Done.')
-        
-        if numel(peaks)==3
+            % Parameters to use in peak finder
+            baseparams = [analysis_params.stdevmultiplier,...
+                analysis_params.diffmultiplier, ...
+                analysis_params.edgethres,...
+                analysis_params.winsize, ...
+                analysis_params.diff_threshold,...
+                analysis_params.med_filt_wd, ...
+                analysis_params.bs_dev_thres];
             
-            
-        peakdist_temp = peaks(end)-peaks(1);
-        %%% Identify left- and right-hand baselines within segment:
-    %     disp(' ')
-    %     disp('Identifying baseline...')
+            % Find peaks in each segment of x and y data
+            peaks = S2_PeaksetFinder(local_xdata, local_ydata, ...
+                analysis_params.offset_input, baseparams, ...
+                analysis_params.analysismode);
         
-        [left_base, right_base, edgeidx] = S2_BaselineFinder(local_xdata, local_ydata, peaks, baseparams, peakdist_temp, analysis_params.analysismode);  
-        if(numel(left_base) == 0 || numel(right_base) == 0 || numel(edgeidx) == 0 || numel(peaks) == 0)
-        i=i+1;   
+        if numel(peaks) == 3
+            peakdist_temp = peaks(end)-peaks(1);
+            %%% Identify left- and right-hand baselines within segment:
+        %     disp(' ')
+        %     disp('Identifying baseline...')
+            
+            [left_base, right_base, edgeidx] = S2_BaselineFinder(local_xdata, local_ydata, peaks, baseparams, peakdist_temp, analysis_params.analysismode);  
+            if(numel(left_base) == 0 || numel(right_base) == 0 || numel(edgeidx) == 0 || numel(peaks) == 0)
+            i=i+1;   
         else
-            
-            
-            
             local_peakwidth = diff(edgeidx);  
             
             pk_xdata = local_xdata(left_base(1):right_base(end)) - local_xdata(left_base(1)) + 1;
             pk_ydata = local_ydata(left_base(1):right_base(end));
-            
-            
-           
             
             local_peaks = peaks - left_base(1) + 1;
             local_baseline = [left_base - left_base(1) + 1, right_base - left_base(1) + 1];
@@ -265,10 +311,9 @@ function [data, analysis_params, elapsed_time] = ...
             %disp('...Done.')
             %disp(' ')
             
-             %% ---------------- added by JK 09/18/14 ------
+            % ---------------- added by JK 09/18/14 ------
             %here we are trying to save the mode shape for each peak detected
          
-           
             %% Input Experiment parameters
                 Experiment.R = 32768;
                 Experiment.decimation = 1;
@@ -369,7 +414,7 @@ function [data, analysis_params, elapsed_time] = ...
     %%% assign peak number in data matrix (1,2,3)
     
     if (~isempty(pk_t))
-        data(1,:) = pk_t ; %LabVIEW record computer real-time
+        data(1,:) = pk_t; %LabVIEW record computer real-time
         data(2,:) = pkht_poly; %peak height
         data(3,:) = peakwidth; %peak width
         data(4,:) = pk_leftbase;

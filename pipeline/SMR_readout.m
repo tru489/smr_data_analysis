@@ -192,10 +192,11 @@ estimated_datapoints = 80:10:300;
 datasizetest = 5e5;
 num_peaks_compiled = [];
 
+fprintf('\Estimating optimal number of datapoints for peak detection...\n')
 for i = 1:length(estimated_datapoints)
     % Create a column vector of the frequency data in the current block 
     % being analyzed  
-    test_slice_start = loop * datasizetest+1;
+    test_slice_start = loop * datasizetest + 1;
     test_slice_end = min(length(rawdata_smr), (loop + 1) * datasizetest);
     
     rawdata_smr_current_test = ...
@@ -209,7 +210,7 @@ for i = 1:length(estimated_datapoints)
     % Detect peaks from current block
     datalasttest = S1_PeakAnalysis_time(-rawdata_smr_current_test', ...
         rawdata_smr_time_current_test, datatest, loop, analysisparams, ...
-        estimated_datapoints(i));
+        estimated_datapoints(i), elapsed_time);
     num_peaks_compiled(i) = length(datalasttest)./3;
 end
 
@@ -220,6 +221,7 @@ estimated_datapoints_best = estimated_datapoints(optimized_idx);
 
 % estimated_datapoints_best = 150;
 
+fprintf('\Detecting peaks from raw data...\n')
 while(1)
     % Create a column vector of the frequency data in the current block being analyzed  
     test_slice_start = loop * datasize + 1;
@@ -238,7 +240,6 @@ while(1)
         write_param=0;
     end
     
-    
     % Compile all detected indiviaul peaks from each segement through the
     % loop. NOTE: one smr single from 2nd mode vibration will have 3 peaks
     % and thus 3 consecutive rows in the datafull matrix
@@ -252,9 +253,8 @@ while(1)
     end
 end
 analysis_params.estimated_datapoints_optimized = estimated_datapoints_best;
-%=================================================================%
-%%
-%=======================Merging and filtering=======================%
+
+%% =======================Merging and filtering=======================%
 % Run the merge function to get cell by peak-feature matrix and save
 datasmr = S3_Merge(datafull);
 %save('data.mat', 'datasmr');
@@ -262,8 +262,6 @@ datasmr = S3_Merge(datafull);
 % Run select_smrpeaks_fast to filter out bad peaks and save filtered matrix
 [datasmr_good, number_bad_peaks] = select_smrpeaks_fast(datasmr);
 %save('data.mat', 'datasmr_good');
-%=================================================================%
-
 
 %% Output readout file
 % Write txt file, NOTE: a high precision number is required to output
