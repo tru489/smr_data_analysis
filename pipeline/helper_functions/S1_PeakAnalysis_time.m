@@ -181,7 +181,7 @@ function [data, analysis_params, elapsed_time] = ...
             % Find all breaks in y_diff indices; that is, contiguous 
             % regions where the signal deviates significantly from the 
             % baseline. Each segment is a peak of interest, with end on 
-            % idx_end and start on (idx_end + 1). 
+            % idx_end and start on (idx_end + 1)
             idx_ends = find(abs(diff(idx)) > 1);
 
             % Cap the beginning and end of idx with markers
@@ -268,7 +268,7 @@ function [data, analysis_params, elapsed_time] = ...
             local_xdata = xdata(segmentbound(i):segmentbound(i + 1)) - ...
                 xdata(segmentbound(i)) + 1;
             local_ydata = ydata(segmentbound(i):segmentbound(i + 1));
-        
+
             % Parameters to use in peak finder
             baseparams = [analysis_params.stdevmultiplier,...
                 analysis_params.diffmultiplier, ...
@@ -283,133 +283,134 @@ function [data, analysis_params, elapsed_time] = ...
                 analysis_params.offset_input, baseparams, ...
                 analysis_params.analysismode);
         
-        if numel(peaks) == 3
-            peakdist_temp = peaks(end)-peaks(1);
-            %%% Identify left- and right-hand baselines within segment:
-        %     disp(' ')
-        %     disp('Identifying baseline...')
-            
-            [left_base, right_base, edgeidx] = S2_BaselineFinder(local_xdata, local_ydata, peaks, baseparams, peakdist_temp, analysis_params.analysismode);  
-            if(numel(left_base) == 0 || numel(right_base) == 0 || numel(edgeidx) == 0 || numel(peaks) == 0)
-            i=i+1;   
-        else
-            local_peakwidth = diff(edgeidx);  
-            
-            pk_xdata = local_xdata(left_base(1):right_base(end)) - local_xdata(left_base(1)) + 1;
-            pk_ydata = local_ydata(left_base(1):right_base(end));
-            
-            local_peaks = peaks - left_base(1) + 1;
-            local_baseline = [left_base - left_base(1) + 1, right_base - left_base(1) + 1];
-            %disp('...Done.')
-            
-    %         input('continue?');
-            %%% Perform polynomial fits to refine peak location and to measure peak height:
-            %disp(' ')
-            %disp('Performing polynomial fit on segment peaks...')
-            [local_pkidx_poly, local_pkht_poly, local_apkidx_poly, local_apkht_poly, local_baselineslope, local_htdiff_poly, local_ahtdiff_poly] ...
-                = S2_PeakFitter(pk_xdata, pk_ydata, local_baseline, local_peaks, local_peakwidth, analysis_params.dispprogress); 
-            %disp('...Done.')
-            %disp(' ')
-            
-            % ---------------- added by JK 09/18/14 ------
-            %here we are trying to save the mode shape for each peak detected
-         
-            %% Input Experiment parameters
-                Experiment.R = 32768;
-                Experiment.decimation = 1;
-                Experiment.Fs = 100e6 / Experiment.R / Experiment.decimation;
+            % If detected peak set contains 3 peaks (as is expected with
+            % second mode measurements), then ___________________
+            if numel(peaks) == 3
+                % Number of indices between first and last peak
+                peakdist_temp = peaks(end)-peaks(1);
+                %%% Identify left- and right-hand baselines within segment:
+                % disp(' ')
+                % disp('Identifying baseline...')
+                
+                % Identify sections of baseline to the left and right of
+                % the peakset and their indices
+                [left_base, right_base, edgeidx] = S2_BaselineFinder(local_xdata, local_ydata, peaks, baseparams, peakdist_temp, analysis_params.analysismode);  
+                if(numel(left_base) == 0 || numel(right_base) == 0 || numel(edgeidx) == 0 || numel(peaks) == 0)
+                    i=i+1;
+                else
+                    local_peakwidth = diff(edgeidx);  
+                
+                    pk_xdata = local_xdata(left_base(1):right_base(end)) - local_xdata(left_base(1)) + 1;
+                    pk_ydata = local_ydata(left_base(1):right_base(end));
+                
+                    local_peaks = peaks - left_base(1) + 1;
+                    local_baseline = [left_base - left_base(1) + 1, right_base - left_base(1) + 1];
+                    % disp('...Done.')
+                    
+                    % input('continue?');
+                    %%% Perform polynomial fits to refine peak location and to measure peak height:
+                    %disp(' ')
+                    %disp('Performing polynomial fit on segment peaks...')
+                    [local_pkidx_poly, local_pkht_poly, local_apkidx_poly, local_apkht_poly, local_baselineslope, local_htdiff_poly, local_ahtdiff_poly] ...
+                        = S2_PeakFitter(pk_xdata, pk_ydata, local_baseline, local_peaks, local_peakwidth, analysis_params.dispprogress); 
+                    %disp('...Done.')
+                    %disp(' ')
+                    
+                    % ---------------- added by JK 09/18/14 ------
+                    %here we are trying to save the mode shape for each peak detected
+             
+                    %% Input Experiment parameters
+                    Experiment.R = 32768;
+                    Experiment.decimation = 1;
+                    Experiment.Fs = 100e6 / Experiment.R / Experiment.decimation;
+        
+               
+                    temppeak = local_ydata(left_base(1): right_base(end));
+                    
+                    temptime = [t(segmentbound(i) + left_base(1))+1/Experiment.Fs:1/Experiment.Fs:t(segmentbound(i) + left_base(1))+1/Experiment.Fs*length(temppeak)];
+                    samplepeak=[samplepeak temppeak' 1e3 i sectionnumber]; 
+                    sampletime = [sampletime temptime 0 i sectionnumber];
+                    % 0 is to distinguish different peaks
+        
+                    format shortg
+                    
+                    % fprintf('------- Section %1.0f ------ \n', sectionnumber);
+                    % fprintf('-- Data for Segment %1.0f -- \n', i);
+                    % fprintf('Baseline slope: %1.5f \n', local_baselineslope);
+                    % fprintf('2nd mode %%diff: %1.5f \n', local_htdiff_poly);
+                    % fprintf('-------------------------- \n')
+                    % disp(' ')
+        
+                    pkidx_poly = [pkidx_poly local_pkidx_poly + segmentbound(i) + left_base(1)];
+                    apkidx_poly = [apkidx_poly local_apkidx_poly + segmentbound(i) + left_base(1)];
+                    pk_t = [pk_t t(local_pkidx_poly + segmentbound(i) + left_base(1))'];
+                    apk_t = [apk_t t(local_apkidx_poly + segmentbound(i) + left_base(1))' 0];
+                    pkht_poly = [pkht_poly local_pkht_poly];
+                    apkht_poly = [apkht_poly local_apkht_poly 0];
+                    peakwidth = [peakwidth local_peakwidth*ones(1,length(peaks))];
+                    pk_leftbase = [pk_leftbase mean(local_ydata(left_base))*ones(1,length(peaks))];
+                    pk_rightbase = [pk_rightbase mean(local_ydata(right_base))*ones(1,length(peaks))];
+                    baselinedist = [baselinedist (right_base(end) - left_base(1) + 1)*ones(1,length(peaks))];
+                    baselineslope = [baselineslope local_baselineslope*ones(1,length(peaks))];
+                    htdiff_poly = [htdiff_poly local_htdiff_poly*ones(1,length(peaks))];
+                    ahtdiff_poly = [ahtdiff_poly local_ahtdiff_poly*ones(1,length(peaks))];
+                    pknum = [pknum 1:length(peaks)];
+                    pkorder = [pkorder i*ones(1,length(peaks))];
+                    sectnum = [sectnum sectionnumber*ones(1,length(peaks))];
+        
+               
+                    if analysis_params.dispprogress == 1
+                        hold off; drawnow;
+                        figure(1);
+                        
+                        subplot(2,2,[1 2]); plot(xdata, ydata, '-'); 
+                        hold on;
+                        subplot(2,2,[1 2]); plot(peak_idx, ydata(peak_idx), '.r');
+                        subplot(2,2,[1 2]); plot(left_base + segmentbound(i), ydata(left_base + segmentbound(i)), '.g', right_base + segmentbound(i), ydata(right_base + segmentbound(i)), '.g')
+                        
+                        % if (left_base(1)-segment_med_wd<1)
+                        %     subplot(2,2,[1 2]); plot(left_base-left_base(1)+1, ydata(left_base-left_base(1)+1), '.g', ...
+                        %     right_base + peak_idx(i)-segment_med_wd, ydata(right_base + peak_idx(i)-segment_med_wd), '.g')
+                        % else
+                        %     subplot(2,2,[1 2]); plot(left_base + peak_idx(i)-segment_med_wd, ydata(left_base + peak_idx(i)-segment_med_wd), '.g', ...
+                        %     right_base + peak_idx(i)-segment_med_wd, ydata(right_base + peak_idx(i)-segment_med_wd), '.g')
+                        % end
+                        % subplot(2,2,[1 2]); plot(left_base + peak_idx(i)-segment_med_wd, ydata(left_base + peak_idx(i)-segment_med_wd), '.g', ...
+                        % right_base + peak_idx(i)-segment_med_wd, ydata(right_base + peak_idx(i)-segment_med_wd), '.g')
+                        
+                        subplot(2,2,[1 2]); plot(xdata(peak_idx(i)), ydata(peak_idx(i)), '.c');                 % mark last analyzed peakset
+                        subplot(2,2,[1 2]); line([segmentbound' segmentbound'], [min(ydata) - 100 max(ydata) + 100], 'Color', 'k', 'LineStyle', ':')
+                        subplot(2,2,[1 2]); plot(xdata, ydata_thres, 'k')
+                        set(gca,'XLim',[0 length(xdata)]);
+                        set(gca,'YLim',[min(ydata) - 10 max(ydata) + 10]); hold off;
+               
+                                                                                                        % Plot all peak heights over time in bottom right graph
+                        if sum(datalast)==0
+                            subplot(2,2,4); plot(elapsed_time + pk_t, pkht_poly, '.')                       % add each new analyzed point to this existing plot
+                            hold on
+                        else
+                            subplot(2,2,4); plot(datalast(1,2:end), datalast(2,2:end), '.')                     % plot all previous data points
+                            hold on
+                            subplot(2,2,4); plot(elapsed_time + pk_t, pkht_poly, '.')                       % add each new analyzed point to this existing plot
+                        end
     
-           
-            temppeak = local_ydata(left_base(1): right_base(end));
-            
-            temptime = [t(segmentbound(i) + left_base(1))+1/Experiment.Fs:1/Experiment.Fs:t(segmentbound(i) + left_base(1))+1/Experiment.Fs*length(temppeak)];
-            samplepeak=[samplepeak temppeak' 1e3 i sectionnumber]; 
-            sampletime = [sampletime temptime 0 i sectionnumber];
-            % 0 is to distinguish different peaks
-    
-            format shortg
-    %         fprintf('------- Section %1.0f ------ \n', sectionnumber);
-    %         fprintf('-- Data for Segment %1.0f -- \n', i);
-    %         fprintf('Baseline slope: %1.5f \n', local_baselineslope);
-    %         fprintf('2nd mode %%diff: %1.5f \n', local_htdiff_poly);
-    %         fprintf('-------------------------- \n')
-    %         disp(' ')
-    
-            pkidx_poly = [pkidx_poly local_pkidx_poly + segmentbound(i) + left_base(1)];
-            apkidx_poly = [apkidx_poly local_apkidx_poly + segmentbound(i) + left_base(1)];
-            pk_t = [pk_t t(local_pkidx_poly + segmentbound(i) + left_base(1))'];
-            apk_t = [apk_t t(local_apkidx_poly + segmentbound(i) + left_base(1))' 0];
-            pkht_poly = [pkht_poly local_pkht_poly];
-            apkht_poly = [apkht_poly local_apkht_poly 0];
-            peakwidth = [peakwidth local_peakwidth*ones(1,length(peaks))];
-            pk_leftbase = [pk_leftbase mean(local_ydata(left_base))*ones(1,length(peaks))];
-            pk_rightbase = [pk_rightbase mean(local_ydata(right_base))*ones(1,length(peaks))];
-            baselinedist = [baselinedist (right_base(end) - left_base(1) + 1)*ones(1,length(peaks))];
-            baselineslope = [baselineslope local_baselineslope*ones(1,length(peaks))];
-            htdiff_poly = [htdiff_poly local_htdiff_poly*ones(1,length(peaks))];
-            ahtdiff_poly = [ahtdiff_poly local_ahtdiff_poly*ones(1,length(peaks))];
-            pknum = [pknum 1:length(peaks)];
-            pkorder = [pkorder i*ones(1,length(peaks))];
-            sectnum = [sectnum sectionnumber*ones(1,length(peaks))];
-    
-           
-             if analysis_params.dispprogress == 1
-              hold off; drawnow;
-                figure(1);
-           
-            subplot(2,2,[1 2]); plot(xdata, ydata, '-'); 
-            hold on;
-            subplot(2,2,[1 2]); plot(peak_idx, ydata(peak_idx), '.r');
-            subplot(2,2,[1 2]); plot(left_base + segmentbound(i), ydata(left_base + segmentbound(i)), '.g', right_base + segmentbound(i), ydata(right_base + segmentbound(i)), '.g')
-    %         if (left_base(1)-segment_med_wd<1)
-    %             subplot(2,2,[1 2]); plot(left_base-left_base(1)+1, ydata(left_base-left_base(1)+1), '.g', ...
-    %                 right_base + peak_idx(i)-segment_med_wd, ydata(right_base + peak_idx(i)-segment_med_wd), '.g')
-    %         else
-    %             subplot(2,2,[1 2]); plot(left_base + peak_idx(i)-segment_med_wd, ydata(left_base + peak_idx(i)-segment_med_wd), '.g', ...
-    %                 right_base + peak_idx(i)-segment_med_wd, ydata(right_base + peak_idx(i)-segment_med_wd), '.g')
-    %         end
-    %         subplot(2,2,[1 2]); plot(left_base + peak_idx(i)-segment_med_wd, ydata(left_base + peak_idx(i)-segment_med_wd), '.g', ...
-    %             right_base + peak_idx(i)-segment_med_wd, ydata(right_base + peak_idx(i)-segment_med_wd), '.g')
-            subplot(2,2,[1 2]); plot(xdata(peak_idx(i)), ydata(peak_idx(i)), '.c');                 % mark last analyzed peakset
-            subplot(2,2,[1 2]); line([segmentbound' segmentbound'], [min(ydata) - 100 max(ydata) + 100], 'Color', 'k', 'LineStyle', ':')
-            subplot(2,2,[1 2]); plot(xdata, ydata_thres, 'k')
-            set(gca,'XLim',[0 length(xdata)]);
-            set(gca,'YLim',[min(ydata) - 10 max(ydata) + 10]); hold off;
-       
-                                                                                                % Plot all peak heights over time in bottom right graph
-            if sum(datalast)==0
-                subplot(2,2,4); plot(elapsed_time + pk_t, pkht_poly, '.')                       % add each new analyzed point to this existing plot
-                hold on
+                        subplot(2,2,4); plot(pk_t((end - length(peaks) + 1):end) + elapsed_time, pkht_poly((end - length(peaks) + 1):end), 'or') % highlight last point
+                        hold off
+                    else
+                        clc
+                    end
+                
+                    if(analysis_params.analysismode ~= 1)
+                        input('Hit ENTER to continue with analysis, CTRL+C to stop analysis......  ');
+                    end
+                i=i+1;
+                end
             else
-                subplot(2,2,4); plot(datalast(1,2:end), datalast(2,2:end), '.')                     % plot all previous data points
-                hold on
-                subplot(2,2,4); plot(elapsed_time + pk_t, pkht_poly, '.')                       % add each new analyzed point to this existing plot
+                %disp('no good peaks in this segment or number of peaks is not 3');
             end
-            
-            subplot(2,2,4); plot(pk_t((end - length(peaks) + 1):end) + elapsed_time, pkht_poly((end - length(peaks) + 1):end), 'or') % highlight last point
-            hold off
-            
-             else
-                clc
-             end
-            
-            if(analysis_params.analysismode ~= 1)
-                input('Hit ENTER to continue with analysis, CTRL+C to stop analysis......  ');
-            end
-            
-            
-            i=i+1;
-        end
-        
-        else
-            %disp('no good peaks in this segment or number of peaks is not 3');
-         
-        end
-        
         else
            %disp('JK: skipping this segment. Too short for baseline selection');
         end
-        
     end
     %%% assign peak number in data matrix (1,2,3)
     
