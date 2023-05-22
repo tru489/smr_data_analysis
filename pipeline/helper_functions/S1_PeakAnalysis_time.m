@@ -282,7 +282,10 @@ function [data, analysis_params, elapsed_time] = ...
             peaks = S2_PeaksetFinder(local_xdata, local_ydata, ...
                 analysis_params.offset_input, baseparams, ...
                 analysis_params.analysismode);
-        
+            
+            % ---------------START HERE---------------------
+                
+
             % If detected peak set contains 3 peaks (as is expected with
             % second mode measurements), then ___________________
             if numel(peaks) == 3
