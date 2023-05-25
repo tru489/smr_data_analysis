@@ -8,5 +8,5 @@ function rawdata_smr = read_freq_from_binary(smr_file_ID)
     rawdata_smr(rawdata_smr <= -pi/2) = ...
         rawdata_smr(rawdata_smr <= -pi/2) + pi;
     rawdata_smr = rawdata_smr*10000/(2*pi);
-    fclose(smr_file_ID);
+    % fclose(smr_file_ID);
 end
