@@ -240,7 +240,7 @@ while(1)
         write_param=0;
     end
     
-    % Compile all detected indiviaul peaks from each segement through the
+    % Compile all detected individual peaks from each segement through the
     % loop. NOTE: one smr single from 2nd mode vibration will have 3 peaks
     % and thus 3 consecutive rows in the datafull matrix
     datafull = [datafull datalast]; 
@@ -259,7 +259,8 @@ analysis_params.estimated_datapoints_optimized = estimated_datapoints_best;
 datasmr = S3_Merge(datafull);
 %save('data.mat', 'datasmr');
 
-% Run select_smrpeaks_fast to filter out bad peaks and save filtered matrix
+% Run select_smrpeaks_fast to filter out bad peaks and save filtered
+% matrix. Does not support manual peak curation.
 [datasmr_good, number_bad_peaks] = select_smrpeaks_fast(datasmr);
 %save('data.mat', 'datasmr_good');
 
@@ -269,6 +270,16 @@ datasmr = S3_Merge(datafull);
 % pairing to the pmt signals
 % datasmr_good format is [tm' tm'/60 mm' bm' bs' m1' m2' m3' nd1' nd2' 
 % ndm' w' bd' vs' sectnum' tm'/3600 mm'/2 pkorder' ndm'./mm'];
+
+
+
+
+% START HERE -------------------------------------------------------------
+
+
+
+
+
 
 % Time, mean peakhight, mean node deviation
 output_matrix = [datasmr_good(:,1), datasmr_good(:,3), datasmr_good(:,11)]; 

@@ -1,5 +1,3 @@
-
-
 global samplepeak
 global sampletime
 global sidelength

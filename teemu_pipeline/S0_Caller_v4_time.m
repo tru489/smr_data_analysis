@@ -23,8 +23,6 @@ elapsed_time = 0;
 samplepeak=[];
 sampletime=[];
 
-
-
 disp(' ')
 disp('Getting frequency data...')
 [freqfilepath freqdir filind1] = uigetfile('../*.*','Select Frequency Data File',' ');

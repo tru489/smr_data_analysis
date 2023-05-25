@@ -31,7 +31,7 @@ while exitflag == 0
     leftsearch_rightbound = max(1, peaks(1) - round(peakdist/6));
     leftedgesearch = leftsearch_leftbound:1:leftsearch_rightbound;
     
-    % Set indices to search around left edge of peak signal
+    % Set indices to search around right edge of peak signal
     rightsearch_leftbound = min(length(ydata), ...
         peaks(end) + round(peakdist / 6));
     rightsearch_rightbound = min((peaks(end) + winsize) , length(ydata));

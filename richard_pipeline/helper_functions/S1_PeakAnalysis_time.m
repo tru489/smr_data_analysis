@@ -281,37 +281,39 @@ function [data, analysis_params, elapsed_time] = ...
             % Find peaks in each segment of x and y data
             peaks = S2_PeaksetFinder(local_xdata, local_ydata, ...
                 analysis_params.offset_input, baseparams, ...
-                analysis_params.analysismode);
-            
-            % ---------------START HERE---------------------
-                
+                analysis_params.analysismode);                
 
             % If detected peak set contains 3 peaks (as is expected with
             % second mode measurements), then ___________________
             if numel(peaks) == 3
                 % Number of indices between first and last peak
                 peakdist_temp = peaks(end)-peaks(1);
-                %%% Identify left- and right-hand baselines within segment:
-                % disp(' ')
-                % disp('Identifying baseline...')
                 
                 % Identify sections of baseline to the left and right of
                 % the peakset and their indices
                 [left_base, right_base, edgeidx] = S2_BaselineFinder(local_xdata, local_ydata, peaks, baseparams, peakdist_temp, analysis_params.analysismode);  
+                
+                % Skip this peak if the baseline around the peak cannot be
+                % identified
                 if(numel(left_base) == 0 || numel(right_base) == 0 || numel(edgeidx) == 0 || numel(peaks) == 0)
                     i=i+1;
                 else
+                    % Number of datapoints in the peak
                     local_peakwidth = diff(edgeidx);  
-                
+                    
+                    % Slice out x and y data around peak, normalizing the
+                    % indices of x to start at 1
                     pk_xdata = local_xdata(left_base(1):right_base(end)) - local_xdata(left_base(1)) + 1;
                     pk_ydata = local_ydata(left_base(1):right_base(end));
-                
+                    
+                    % Subtract baseline from the left and right baseline
+                    % segments and the peaks for polynomial fitting
                     local_peaks = peaks - left_base(1) + 1;
                     local_baseline = [left_base - left_base(1) + 1, right_base - left_base(1) + 1];
                     % disp('...Done.')
                     
                     % input('continue?');
-                    %%% Perform polynomial fits to refine peak location and to measure peak height:
+                    % Perform polynomial fits to refine peak location and to measure peak height
                     %disp(' ')
                     %disp('Performing polynomial fit on segment peaks...')
                     [local_pkidx_poly, local_pkht_poly, local_apkidx_poly, local_apkht_poly, local_baselineslope, local_htdiff_poly, local_ahtdiff_poly] ...
@@ -323,15 +325,16 @@ function [data, analysis_params, elapsed_time] = ...
                     %here we are trying to save the mode shape for each peak detected
              
                     %% Input Experiment parameters
+                    
+                    % -----------START HERE--------------------
                     Experiment.R = 32768;
                     Experiment.decimation = 1;
                     Experiment.Fs = 100e6 / Experiment.R / Experiment.decimation;
         
-               
                     temppeak = local_ydata(left_base(1): right_base(end));
                     
                     temptime = [t(segmentbound(i) + left_base(1))+1/Experiment.Fs:1/Experiment.Fs:t(segmentbound(i) + left_base(1))+1/Experiment.Fs*length(temppeak)];
-                    samplepeak=[samplepeak temppeak' 1e3 i sectionnumber]; 
+                    samplepeak = [samplepeak temppeak' 1e3 i sectionnumber]; 
                     sampletime = [sampletime temptime 0 i sectionnumber];
                     % 0 is to distinguish different peaks
         
@@ -344,24 +347,25 @@ function [data, analysis_params, elapsed_time] = ...
                     % fprintf('-------------------------- \n')
                     % disp(' ')
         
-                    pkidx_poly = [pkidx_poly local_pkidx_poly + segmentbound(i) + left_base(1)];
-                    apkidx_poly = [apkidx_poly local_apkidx_poly + segmentbound(i) + left_base(1)];
-                    pk_t = [pk_t t(local_pkidx_poly + segmentbound(i) + left_base(1))'];
-                    apk_t = [apk_t t(local_apkidx_poly + segmentbound(i) + left_base(1))' 0];
-                    pkht_poly = [pkht_poly local_pkht_poly];
-                    apkht_poly = [apkht_poly local_apkht_poly 0];
-                    peakwidth = [peakwidth local_peakwidth*ones(1,length(peaks))];
-                    pk_leftbase = [pk_leftbase mean(local_ydata(left_base))*ones(1,length(peaks))];
-                    pk_rightbase = [pk_rightbase mean(local_ydata(right_base))*ones(1,length(peaks))];
-                    baselinedist = [baselinedist (right_base(end) - left_base(1) + 1)*ones(1,length(peaks))];
-                    baselineslope = [baselineslope local_baselineslope*ones(1,length(peaks))];
-                    htdiff_poly = [htdiff_poly local_htdiff_poly*ones(1,length(peaks))];
-                    ahtdiff_poly = [ahtdiff_poly local_ahtdiff_poly*ones(1,length(peaks))];
-                    pknum = [pknum 1:length(peaks)];
-                    pkorder = [pkorder i*ones(1,length(peaks))];
-                    sectnum = [sectnum sectionnumber*ones(1,length(peaks))];
+                    pkidx_poly = [pkidx_poly local_pkidx_poly + segmentbound(i) + left_base(1)];                % Peak apex index from polynomial fit
+                    apkidx_poly = [apkidx_poly local_apkidx_poly + segmentbound(i) + left_base(1)];             % Peak anti-apex index from polynomial fit
+                    pk_t = [pk_t t(local_pkidx_poly + segmentbound(i) + left_base(1))'];                        % Time of peak apex index from polynomial fit
+                    apk_t = [apk_t t(local_apkidx_poly + segmentbound(i) + left_base(1))' 0];                   % Time of peak anti-apex index from polynomial fit
+                    pkht_poly = [pkht_poly local_pkht_poly];                                                    % Peak apex height from polynomial fit
+                    apkht_poly = [apkht_poly local_apkht_poly 0];                                               % Peak anti-apex height from polynomial fit
+                    peakwidth = [peakwidth local_peakwidth*ones(1,length(peaks))];                              % Peak widths
+                    pk_leftbase = [pk_leftbase mean(local_ydata(left_base))*ones(1,length(peaks))];             % Mean of baseline to the left of peak
+                    pk_rightbase = [pk_rightbase mean(local_ydata(right_base))*ones(1,length(peaks))];          % Mean of baseline to the right of peak
+                    baselinedist = [baselinedist (right_base(end) - left_base(1) + 1)*ones(1,length(peaks))];   % Distance between baseline fragments to the left and right of peak
+                    baselineslope = [baselineslope local_baselineslope*ones(1,length(peaks))];                  % Baseline slope
+                    htdiff_poly = [htdiff_poly local_htdiff_poly*ones(1,length(peaks))];                        % Mean height distance between anti-apices (i.e. antinodes)
+                    ahtdiff_poly = [ahtdiff_poly local_ahtdiff_poly*ones(1,length(peaks))];                     % Peak FWHM
+                    pknum = [pknum 1:length(peaks)];                                                            % Integer number of peak
+                    pkorder = [pkorder i*ones(1,length(peaks))];                                                % Integer order of peak
+                    sectnum = [sectnum sectionnumber*ones(1,length(peaks))];                                    % Section number (within full frequency data) of peak
         
-               
+                    % Plot xdata, ydata, peak apices, and left and right
+                    % boundaries of peak
                     if analysis_params.dispprogress == 1
                         hold off; drawnow;
                         figure(1);
@@ -381,13 +385,17 @@ function [data, analysis_params, elapsed_time] = ...
                         % subplot(2,2,[1 2]); plot(left_base + peak_idx(i)-segment_med_wd, ydata(left_base + peak_idx(i)-segment_med_wd), '.g', ...
                         % right_base + peak_idx(i)-segment_med_wd, ydata(right_base + peak_idx(i)-segment_med_wd), '.g')
                         
-                        subplot(2,2,[1 2]); plot(xdata(peak_idx(i)), ydata(peak_idx(i)), '.c');                 % mark last analyzed peakset
+                        % Mark last analyzed peakset
+                        subplot(2,2,[1 2]); plot(xdata(peak_idx(i)), ydata(peak_idx(i)), '.c');
+                        % Plot line across baseline
                         subplot(2,2,[1 2]); line([segmentbound' segmentbound'], [min(ydata) - 100 max(ydata) + 100], 'Color', 'k', 'LineStyle', ':')
+                        % Plot y threshold for peak detection
                         subplot(2,2,[1 2]); plot(xdata, ydata_thres, 'k')
+                        
                         set(gca,'XLim',[0 length(xdata)]);
                         set(gca,'YLim',[min(ydata) - 10 max(ydata) + 10]); hold off;
                
-                                                                                                        % Plot all peak heights over time in bottom right graph
+                        % Plot all peak heights over time in bottom right graph
                         if sum(datalast)==0
                             subplot(2,2,4); plot(elapsed_time + pk_t, pkht_poly, '.')                       % add each new analyzed point to this existing plot
                             hold on
@@ -417,19 +425,20 @@ function [data, analysis_params, elapsed_time] = ...
     end
     %%% assign peak number in data matrix (1,2,3)
     
+    % Data to save
     if (~isempty(pk_t))
-        data(1,:) = pk_t; %LabVIEW record computer real-time
-        data(2,:) = pkht_poly; %peak height
-        data(3,:) = peakwidth; %peak width
-        data(4,:) = pk_leftbase;
-        data(5,:) = pk_rightbase;
-        data(6,:) = baselinedist; %baseline left to right distance
-        data(7,:) = baselineslope; %1st order baseline fit slope before flattening
-        data(8,:) = apkht_poly;    %node deviation
-        data(9,:) = ahtdiff_poly;   %FWHM
-        data(10,:) = sectnum;
-        data(11,:) = pknum;
-        data(12,:) = pkorder;
+        data(1,:) = pk_t;             % LabVIEW record computer real-time
+        data(2,:) = pkht_poly;        % Peak height from polynomial fit
+        data(3,:) = peakwidth;        % Peak width
+        data(4,:) = pk_leftbase;      % Peak left baseline
+        data(5,:) = pk_rightbase;     % Peak right baseline
+        data(6,:) = baselinedist;     % Baseline left to right distance
+        data(7,:) = baselineslope;    % 1st order baseline fit slope before flattening
+        data(8,:) = apkht_poly;       % Node deviation
+        data(9,:) = ahtdiff_poly;     % FWHM
+        data(10,:) = sectnum;         % Section number in analysis
+        data(11,:) = pknum;           % Peak number
+        data(12,:) = pkorder;         % Peak order
         data(13,:) = vv(pkidx_poly);
         %save('data.csv','data','-ascii','-double','-append');                                   % save the current processing
     else
