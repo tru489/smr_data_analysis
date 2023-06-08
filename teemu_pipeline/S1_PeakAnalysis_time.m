@@ -73,8 +73,8 @@ disp('Finding peak indices...')
 diff_threshold = 0.01;      % Find extremely flat part of curve (sys1)
 med_filt_wd = 50;           % window of median filter, which removes the flat part in the anti-node
 bs_dev_thres = 0.5;         % threshold used to remove the flat part in the anti-node
-unqPeakDist=250;            % distance over which is a unique 2nd mode peaks
-offset_input = 10;    % baseline offset to select for peaks
+unqPeakDist = 250;          % distance over which is a unique 2nd mode peaks
+offset_input = 5;           % baseline offset to select for peaks
 
 idx = find(abs(diff(ydata))<diff_threshold);                                                  
 

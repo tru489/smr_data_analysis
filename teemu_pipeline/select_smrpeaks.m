@@ -150,7 +150,8 @@ end
 datasmr_processed = datasmr(dataidx,:);
 
 dir_path = uigetdir;
-sample_name = dir_path{length(dir_path) - 1};
+path_sep = strsplit(dir_path, filesep);
+sample_name = path_sep{length(path_sep) - 1};
 writematrix(datasmr_processed, [dir_path filesep sample_name '_datasmr_processed.csv']);
 
 % openvar datasmr_processed
