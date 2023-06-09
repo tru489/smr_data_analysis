@@ -166,9 +166,7 @@ end
 %     fclose(valvestatesfile);
 % end
 
+size(datafull)
 cmd;
 
 end
-
-
-

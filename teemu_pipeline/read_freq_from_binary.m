@@ -3,7 +3,7 @@ function rawdata_smr = read_freq_from_binary(smr_file_ID)
 % SMR driver client to the format saved by the main VI
 % Arguments:
 %   smr_file_id (double): file handle for SMR frequency data binary 
-%   file
+%       file
 % Returns:
 %   rawdata_smr (double): converted binary data to new format
 rawdata_smr = fread(smr_file_ID, 'int32','b') / 2^32;
