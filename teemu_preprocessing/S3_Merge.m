@@ -26,7 +26,8 @@ vs=[];
 idx_nonzero=find(datafull(12,:)>0);
 datafull_processed=datafull(:,idx_nonzero);
 
-flag=0;idx=0;
+flag=0; 
+idx=0;
 idx=find(diff(datafull_processed(12,:))~=0);
 idx=[0 idx];
 
@@ -72,11 +73,13 @@ for i=1:length(idx)
 end
 
 
-datasmr=[tm' tm'/60 mm' bm' bs' m1' m2' m3' nd1' nd2' ndm' w' bd' vs' sectnum' tm'/3600 mm'/2 pkorder' ndm'./mm'];
+datasmr=[tm' tm'/60 mm' bm' bs' m1' m2' m3' nd1' nd2' ndm' w' bd' sectnum' tm'/3600 mm'/1.65 pkorder'];
 % idx=find(abs(data(:,10))<10);
 % data=data(idx,:);
 datafull_processed = datafull_processed';
 
+dir_path = uigetdir;
+writematrix(datasmr, [dir_path filesep 'datasmr.csv']);
 
 [ax, h1, h2]=plotyy(datasmr(:,2), datasmr(:,3), datasmr(:,2), datasmr(:,4));
 set(h1, 'LineStyle', '-.');

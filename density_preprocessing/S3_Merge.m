@@ -20,6 +20,7 @@ bs=[];
 sectnum=[];
 bd=[];
 pkorder=[];
+vs=[];
 
 % filter out zero columns
 idx_nonzero=find(datafull(12,:)>0);
@@ -52,6 +53,7 @@ for i=1:length(idx)
     nd2(i)=datafull_processed(8, temp_idx(2));
     ndm(i)=mean([nd1(i), nd2(i)]);
     bs(i)=datafull_processed(7, temp_idx(1));
+    vs(i)=datafull(13, temp_idx(2));
     sectnum(i)=datafull_processed(10, temp_idx(1)); %sectnum 
     bd(i)=datafull_processed(6, temp_idx(1)); % added by JK (transit time in ms)
     pkorder(i)=datafull_processed(12,temp_idx(1));
@@ -69,13 +71,12 @@ for i=1:length(idx)
 %      input('?');
 end
 
-datasmr=[tm' tm'/60 mm' bm' bs' m1' m2' m3' nd1' nd2' ndm' w' bd' sectnum' tm'/3600 mm'/1.65 pkorder'];
 
-dir_path = uigetdir;
-writematrix(datasmr, [dir_path filesep 'datasmr.csv']);
-
+datasmr=[tm' tm'/60 mm' bm' bs' m1' m2' m3' nd1' nd2' ndm' w' bd' vs' sectnum' tm'/3600 mm'/2 pkorder' ndm'./mm'];
 % idx=find(abs(data(:,10))<10);
 % data=data(idx,:);
+datafull_processed = datafull_processed';
+
 
 [ax, h1, h2]=plotyy(datasmr(:,2), datasmr(:,3), datasmr(:,2), datasmr(:,4));
 set(h1, 'LineStyle', '-.');

@@ -30,7 +30,7 @@ end
 ydata_thres=interp1(xdata(idx), ydata(idx), xdata);
 
 % locally smooth ydata again
-ydata=smooth(ydata, 3);
+ydata=smooth(ydata, 5);
 
 % j=1;
 % for i=1:length(ydata)
@@ -85,10 +85,25 @@ while(repeatflag == 1)
         end
         
         goflag = 0;
+      
+% Remove "false" peaks in noise caused by reversing flow, edit on 01062021
+        if length(peaks)>3  && peaks(4)-peaks(3)>500
+            peaks=peaks(1:3);
+            goflag = 1;
+        end
+        
         if mod(length(peaks),3) ~= 0 
             disp('Warning: the number of peaks found is not a multiple of three. Check plot.')
+            peaks
 %             peaks=[];
             checkthres = 0;%input('Enter 1 if you want to adjust threshold, enter 0 to skip:   ');
+
+            if length(peaks)==1
+                disp('Skipping this peak set. There is only one peak..');
+                peaks=[];
+                repeatflag=0;
+            end
+            
             if checkthres == 1
                 fprintf('Previous threshold multiplier:   %3.0f \n', minpkht_thres);
                 minpkht_thres = input('Input new threshold:   ');
@@ -96,6 +111,7 @@ while(repeatflag == 1)
 %                 peaks = [];
                 goflag = 1;
             end
+            
         else
             goflag = 1;
         end

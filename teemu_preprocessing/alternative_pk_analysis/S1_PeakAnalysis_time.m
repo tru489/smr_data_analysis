@@ -1,7 +1,8 @@
-function data = S1_PeakAnalysis_time(x, t, datalast, sectionnumber, analysisparam, save_dir)
+function data = S1_PeakAnalysis_time(x, s, datalast, sectionnumber, analysisparam, save_dir)
 
-%edited by JK on 03222019
-%edited by Ye on 03032020
+% Original by Sungmin Son
+% Written by Nikita Khlystov
+% Latest edit: 12/16
 
 global xdata
 global ydata
@@ -33,107 +34,102 @@ ahtdiff_poly = [];
 pknum = [];
 sectnum = [];
 pkorder = [];
+% x(3.09e6:3.15e6)=1182;                        
+% x=x(0.5e6:end);
+% medianfreq = median(x);
+%x=x-median(x);
 
 
-t=t-t(1);
+% OPTIMIZE PARAMETERS
+estimated_datapoints = 500;   % For full transit; default
+estimated_noise = 2;          % Hz change from 0.3 to 0.5 on 
 
-if length(x)<100
-    disp('No GOOD peak found in this section: data Length< 10');
-    data=zeros(13,1); 
-    disp(' '); 
-elapsed_time = elapsed_time + t(end);  return;
-end
-
-
-
-                                                             % these are just indices
-
-
-%% ================== estimated data points per frequency peak & noise in system ==============
-%added 03/22/2019
-estimated_datapoints = 500; %for full transit; deafult
-estimated_noise = 2; %Hz change from 0.3 to 0.5 on 
-
-
+% Alternate sgolay smoothing regime; previously used version is commented
+% out
+% ydata = sgolayfilt(sgolayfilt(x, 3, 7), 3, 7);        % this is the smoothed frequency data
 sgolay_length_idx = 4; %this will make default length of 5 for 100 idx index
 sgolay_length = 2*round(sgolay_length_idx*(estimated_datapoints/400))+1;
-fprintf('sgolay length for datapoints per transit of %4.0f will be %2.0f', estimated_datapoints, sgolay_length); disp(' ');
-if elapsed_time==0
-    xtest = x([1:min([1e5, length(x)])]) - x(1);
-figure(2); plot(xtest); hold on;
-plot(sgolayfilt(xtest, 3,5));
-if sgolay_length>3
-plot(sgolayfilt(xtest, 3,sgolay_length));
-legend('raw', 'sgolay 3-5', strcat('sgolay 3-', num2str(sgolay_length)));
+if sgolay_length > 3
+    ydata = sgolayfilt(x,3,sgolay_length);
 else
-legend('raw', 'sgolay 3-5');
+    ydata = sgolayfilt(x,3,5);
 end
 
 
-measured_noise = std(xtest([1:1000]));
+% cutoffdev = 3000;                                   % set cutoff +/- 250 Hz from average of data set
+% a = abs(x - avgfreq) > cutoffdev;                   % find the outliers
+% b = abs(x - avgfreq) < cutoffdev;                   % collect all other data values
+% x(a) = mean(x(b));                                  % set the values of outlier points to the average of non-outlier points
+% a=find(x<1000);
+% x(a)=mean(x);
 
-fprintf('estimated noise level is %2.3f', measured_noise); disp(' ');
-input('check if the filtering is okay and your noise level');
-%estimated_noise = measured_noise;
-end    
+% idx0=find(ydata<=0);
+% ydata(idx0)=1;
+xdata = [1:length(ydata)]';                           % these are just indices
 
-
-
-%%
-if sgolay_length>3
-ydata = sgolayfilt(x,3,sgolay_length); 
-else
-ydata = sgolayfilt(x,3,5);
-end
-xdata = [1:length(ydata)]';    
+% % convert time file to real time
+% time_separator_begin=[1 (find(diff(s)>0.1))'+1];
+% time_separator_end=[(find(diff(s)>0.1))' length(s)];
+% for time_i=1:length(time_separator_begin)
+%     sg_idx=time_separator_begin(time_i):time_separator_end(time_i);
+%     t(sg_idx)=s(sg_idx(1))+cumsum(1./ydata(sg_idx));
+% end
+% t=t-t(1);
+% t=t';
+t=s;
+t=t-t(1);
+ 
+ydata=ydata;
 disp('Finding peak indices...')
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Baseline selection
 % Optimize using below parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-diff_threshold = 0.005;      % Find extremely flat part of curve (sys1)
-med_filt_wd = 200;           % window of median filter, which removes the flat part in the anti-node
-bs_dev_thres = 0.5;         % baseline dev_threshold; threshold used to remove the flat part in the anti-node
-unqPeakDist=250;            % distance over which is a unique 2nd mode peaks
-offset_input = 3;             % baseline offset to select for peaks, change 0.8 to 1 on 2022/02/05
+diff_threshold = 0.005;      % Prev. 0.01; Find extremely flat part of curve (ys1)
+med_filt_wd = 200;           % Prev. 50; window of median filter, which removes the flat part in the anti-node
+bs_dev_thres = 0.5;          % Prev. 0.5; threshold used to remove the flat part in the anti-node
+unqPeakDist = 250;           % Prev. 250; distance over which is a unique 2nd mode peaks
+offset_input = 3;            % Prev. 5; baseline offset to select for peaks
 
-%% added 03222019 - compensate for number of data points & noise level;
+% Compensate for number of data points & noise level
 diff_threshold = diff_threshold*((estimated_noise/0.1)^(1/2))/(estimated_datapoints/400);
 med_filt_wd = round(med_filt_wd * estimated_datapoints/400);
 bs_dev_thres = bs_dev_thres*((estimated_noise/0.1)^(1/2));
 unqPeakDist = round(unqPeakDist*estimated_datapoints/400);
 
-
-size(ydata)
-
-idx = find(abs(diff(ydata))<diff_threshold); %remove fast varying points to get baseline. i.e., remove cell frequency                                                  
-
-size(idx)
-
+idx = find(abs(diff(ydata))<diff_threshold);
 
 % ignore the flat points found over the anti-node
 mf_ydata_thres=medfilt1(ydata(idx), med_filt_wd);
-
-
 idx_f=find(abs(ydata(idx)-mf_ydata_thres)<bs_dev_thres);
-
 idx=idx(idx_f);
-
-if isempty(idx)                   %% add on 03032020 by Ye
-    disp('No GOOD peak found in this section: idx Length == 0');
-    data=zeros(13,1); 
-    disp(' '); 
-elapsed_time = elapsed_time + t(end);  return;
-end
+ydata_thres(idx) = smooth(ydata(idx), 2);      % window=2
+% filter extreme outliers.
+% in density measurement flat part forms in outliers
+idx_in=find(ydata(idx)<3000);
+idx=idx(idx_in);
 
 ydata_thres=interp1(xdata(idx), ydata(idx), xdata);
+% j=1;
+% for i=1:length(ydata)
+%     if j>length(idx)
+%         ydata_thres(i) = ydata_thres(idx(j-1));
+%     else
+%         if i < idx(j)
+%             ydata_thres(i) = ydata_thres(idx(j));
+%         else
+%             j=j+1;
+%         end
+%     end
+% end
 
-size(ydata_thres)
+% offset_input=input('Input offset(default 50)=');
+% if isempty(offset_input)
+%     offset_input=50;
+% end
 
 ydata_thres=ydata_thres-offset_input;
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 idx = find(ydata < ydata_thres);                                                  % find all y_diff values that pass this threshold - these are the main peaks
@@ -157,7 +153,10 @@ while(repeatflag == 1)
         unique_peaks = diff([peak_idx length(xdata)]) > unqPeakDist;
         peak_idx = peak_idx(unique_peaks);                                                      % which for single-cell 2nd-mode peaks are 3n+1, and thus we are saving the each third peak
                                                                                                 %%% now we have the global indices of the main peaks in this segment of
-                                                                                                %%% the entire frequency data                                                                                               
+                                                                                                %%% the entire frequency data
+
+
+        peak_dist = diff([xdata(1) peak_idx xdata(end)]);                                       % find distance between peaks in terms of indices        
         repeatflag = 0;
         disp('...Done.')
     else
@@ -173,7 +172,6 @@ end
 disp(' ')
 disp('Segmentizing the dataset...')
 
-if length(peak_idx)>1     %% add on 03032020 by Ye
 segmentbound = zeros(1,length(peak_idx));
 
 segmentbound(1) = peak_idx(1) + round((peak_idx(2) - peak_idx(1))/2);
@@ -183,15 +181,21 @@ for i = 2:length(peak_idx)-1
 end
 segmentbound(end) = xdata(end);
 segmentbound = [1 segmentbound];
-segment_med_wd = round(median(diff(segmentbound))/10);
 
+% segmentbound = zeros(1,length(peak_idx));
+% segmentbound(1) = round(peak_dist(1) + 0.5*peak_dist(2));
+% for i = 2:length(peak_idx)
+%     segmentbound(i) = round(segmentbound(i - 1) + 0.5*peak_dist(i) + 0.5*peak_dist(i + 1));
+% end
+% segmentbound = [1 segmentbound];
+
+
+
+segment_med_wd = round(median(diff(segmentbound))/10);
 set(gca,'XLim',[0 length(xdata)]);
 set(gca,'YLim',[min(ydata) - 10 max(ydata) + 10]);
 disp('Done.')
 
-else
-    disp('size of peak_idx is smaller than 2')
-end
 %%=======================================================================
 %% ==================== INDIVIDUAL PEAK ANALYSIS================ %%
 %% ==============================================================%%
@@ -214,11 +218,11 @@ for i=1:length(peak_idx)
     
         
     
-    %%%%%%%% USER ADJUSTABLE (Below is assuming 400 data points per transit) %%%%%%%%
-    edgethres = 0.12;               % choose the first point left/right of the secondary peaks 40% percent of the average baseline freqvalue
-    stdevmultiplier = 3;         % allow 102% of the minimum standard deviation
-    diffmultiplier = 1;           % allow 90% of the deviation from mean frequency closest to 2ndary peaks
-    winsize = 120;                  % number of points searching for baseline collection
+    %%%%%%%% USER ADJUSTABLE %%%%%%%%
+    edgethres = 0.12;               % Prev. 0.3; choose the first point left/right of the secondary peaks 40% percent of the average baseline freqvalue
+    stdevmultiplier = 3;            % Prev. 3; allow 102% of the minimum standard deviation
+    diffmultiplier = 1;             % Prev. 1; allow 90% of the deviation from mean frequency closest to 2ndary peaks
+    winsize = 120;                  % Prev. 50; number of points to be collected for baseline selection
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
     baseparams = [stdevmultiplier diffmultiplier edgethres winsize diff_threshold med_filt_wd bs_dev_thres];
@@ -229,7 +233,7 @@ for i=1:length(peak_idx)
     peaks = S2_PeaksetFinder(local_xdata, local_ydata, offset_input, baseparams, analysismode);  
     disp('...Done.')
     
-    if numel(peaks)==3
+    if numel(peaks)~=0
         
         
     peakdist_temp = peaks(end)-peaks(1);
@@ -237,14 +241,14 @@ for i=1:length(peak_idx)
     disp(' ')
     disp('Identifying baseline...')
     
-    [left_base, right_base, edgeidx] = S2_BaselineFinder(local_xdata, local_ydata, peaks, baseparams, peakdist_temp, analysismode);  
+    [left_base right_base edgeidx] = S2_BaselineFinder(local_xdata, local_ydata, peaks, baseparams, peakdist_temp, analysismode);  
     if(numel(left_base) == 0 || numel(right_base) == 0 || numel(edgeidx) == 0 || numel(peaks) == 0)
     i=i+1;   
     else
         
         
         
-        local_peakwidth = diff(edgeidx);  
+        local_peakwidth = diff(edgeidx);  %probably we won't use it.
         
         pk_xdata = local_xdata(left_base(1):right_base(end)) - local_xdata(left_base(1)) + 1;
         pk_ydata = local_ydata(left_base(1):right_base(end));
@@ -270,8 +274,7 @@ for i=1:length(peak_idx)
      
        
         %% Input Experiment parameters
-            %Experiment.R = 32768;
-            Experiment.R = 10000;
+            Experiment.R = 32768;
             Experiment.decimation = 1;
             Experiment.Fs = 100e6 / Experiment.R / Experiment.decimation;
 
@@ -316,13 +319,7 @@ for i=1:length(peak_idx)
         subplot(2,2,[1 2]); plot(xdata, ydata, '-'); 
         hold on;
         subplot(2,2,[1 2]); plot(peak_idx, ydata(peak_idx), '.r');
-        
-        if (right_base + segmentbound(i))<=2000000   % trouble shooting on 12/03/2020, sometime right_base of the last peak exceeds the length of the segment
-             subplot(2,2,[1 2]); plot(left_base + segmentbound(i), ydata(left_base + segmentbound(i)), '.g', right_base + segmentbound(i), ydata(right_base + segmentbound(i)), '.g')
-        else
-            subplot(2,2,[1 2]); plot(left_base + segmentbound(i), ydata(left_base + segmentbound(i)), '.g', right_base + segmentbound(i), ydata(2000000), '.g')
-        end
-        
+        subplot(2,2,[1 2]); plot(left_base + segmentbound(i), ydata(left_base + segmentbound(i)), '.g', right_base + segmentbound(i), ydata(right_base + segmentbound(i)), '.g')
 %         if (left_base(1)-segment_med_wd<1)
 %             subplot(2,2,[1 2]); plot(left_base-left_base(1)+1, ydata(left_base-left_base(1)+1), '.g', ...
 %                 right_base + peak_idx(i)-segment_med_wd, ydata(right_base + peak_idx(i)-segment_med_wd), '.g')
@@ -333,7 +330,7 @@ for i=1:length(peak_idx)
 %         subplot(2,2,[1 2]); plot(left_base + peak_idx(i)-segment_med_wd, ydata(left_base + peak_idx(i)-segment_med_wd), '.g', ...
 %             right_base + peak_idx(i)-segment_med_wd, ydata(right_base + peak_idx(i)-segment_med_wd), '.g')
         subplot(2,2,[1 2]); plot(xdata(peak_idx(i)), ydata(peak_idx(i)), '.c');                 % mark last analyzed peakset
-        subplot(2,2,[1 2]); line([segmentbound' segmentbound'], [min(ydata) - 100 max(ydata) + 100], 'Color', 'k', 'LineStyle', ':')
+        subplot(2,2,[1 2]); line([segmentbound' segmentbound'], [-200 200], 'Color', 'k', 'LineStyle', ':')
         subplot(2,2,[1 2]); plot(xdata, ydata_thres, 'k')
         set(gca,'XLim',[0 length(xdata)]);
         set(gca,'YLim',[min(ydata) - 10 max(ydata) + 10]); hold off;
@@ -363,10 +360,8 @@ for i=1:length(peak_idx)
         
         i=i+1;
     end
-    
     else
-        disp('no good peaks in this segment or number of peaks is not 3');
-     
+        disp('no good peaks in this segment');
     end
     
     else

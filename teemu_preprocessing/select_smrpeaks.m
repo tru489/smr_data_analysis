@@ -13,22 +13,23 @@ Peak.process = zeros(1,Peak.count);
 Peak.peakorder = zeros(1, Peak.count);
 Peak.start(1)=1;
 j=0;
-display('-----------------------------------------------');
+disp('-----------------------------------------------');
 fprintf('Total Number Peaks : %d', length(idx0));
 
 if length(idx0) ~= length(datasmr)
-    display('WARNING. length of sample peaks does not match datasmr!');
+    disp('WARNING. length of sample peaks does not match datasmr!');
     input('go?');
 end
 
-display(' ');
-display('-----------------------------------------------');
-display('press the following keys: ');
+disp(' ');
+disp('-----------------------------------------------');
+disp('press the following keys: ');
 
-display('1) accept the peak = a');  display('2) go to the previous accepted peak = b'); 
- display('3) reject this peak = any keys ' ); 
-display('4) exit this routine = x'); 
-display('-----------------------------------------------');
+disp('1) accept the peak = a');  
+disp('2) go to the previous accepted peak = b'); 
+disp('3) reject this peak = any keys ' ); 
+disp('4) exit this routine = x'); 
+disp('-----------------------------------------------');
 
 for j=2:Peak.count
     Peak.start(j)=idx0(j-1)+3; %% samplepeak looks like [(..data...), 1000, pkorder, sectionnumber, (...data...) ,1000, pkorder, sectionnumber ...]
@@ -52,8 +53,8 @@ idx_discard = find(abs((datasmr(:,6)-datasmr(:,8))./datasmr(:,3)) > 0.5 | abs((d
 
 Peak.process(idx_discard) =2;
 fprintf('#of peaks pre-discarded: %d', length(idx_discard));
-display(' ');
-display('-----------------------------------------------');
+disp(' ');
+disp('-----------------------------------------------');
 
 
 
@@ -65,7 +66,7 @@ figure('OuterPosition',[0 0.05*scrsize(4) scrsize(3) 0.95*scrsize(4)])
 exit_flag = 0;
 i=0;
 
-while i<length(idx0);
+while i<length(idx0)
     i=i+1;
     
     if exit_flag
@@ -86,9 +87,9 @@ while i<length(idx0);
             peak = samplepeak(Peak.start(i):idx0(end)-1);
             time = sampletime(Peak.start(i):idx0(end)-1);
         elseif ismember(i, idx_discard) ==1
-            display(' ');
-            display('discarded peaks. jumping to next one');
-            display(' '); peak=[]; time=[];
+            disp(' ');
+            disp('discarded peaks. jumping to next one');
+            disp(' '); peak=[]; time=[];
             skip =1; 
             break;
         else
@@ -106,21 +107,21 @@ while i<length(idx0);
 %         plot(time, peak); ylim([-5 5]);
 %         
           plot(time, peak);
-          display(' ' ); fprintf('peak #%d. (%d more to go)', i, length(idx0)-i);
+          disp(' ' ); fprintf('peak #%d. (%d more to go)', i, length(idx0)-i);
           
         evaluate_fit = getkey('non-ascii'); 
         if evaluate_fit == 'a'; % Accept the peak
             Peak.process(i) =  1;
             skip = 1;
-            display(' ... ACCEPTED'); display(' ');
-            display('------------------------------------------------------------');
+            disp(' ... ACCEPTED'); display(' ');
+            disp('------------------------------------------------------------');
             fprintf('                  # peaks accepted so far: %d / %d', length(find(Peak.process==1)),i); display(' ' );
             fprintf('                  # peaks rejected: %d / %d', length(find(Peak.process==2)),Peak.count); display(' ' );
-            display('------------------------------------------------------------');
+            disp('------------------------------------------------------------');
 %             save=[sampletime(Peak.start(i):Peak.start(i+1)-4); samplepeak(Peak.start(i):Peak.start(i+1)-4)];
             tempidx=find(datasmr(:,14)==Peak.sectnum(i) & datasmr(:,17)==Peak.peakorder(i));
             if tempidx == i
-                display('matches well!');
+                disp('matches well!');
             end
             
             dataidx = [dataidx tempidx];
@@ -130,16 +131,16 @@ while i<length(idx0);
            
         elseif evaluate_fit == 'b' % Go to previous peak
             i = find(Peak.process(1:i-1) == 1, 1, 'last') - 1; Peak.process(i+1) = 0;
-            display(' '); display('going back to previous peak...'); display(' ');
+            disp(' '); disp('going back to previous peak...'); disp(' ');
             dataidx(end)=[];
             skip = 1;
         else
             Peak.process(i) =2;  
-             display(' ... REJECTED'); display(' '); display(' ');
-            display('------------------------------------------------------------');
-            fprintf('number of peaks selected so far: %d / %d', length(find(Peak.process)==1),i); display(' ' );
-            fprintf('number of peaks rejected so far: %d / %d', length(find(Peak.process==2)),Peak.count); display(' ' );
-            display('------------------------------------------------------------');
+            disp(' ... REJECTED'); disp(' '); disp(' ');
+            disp('------------------------------------------------------------');
+            fprintf('number of peaks selected so far: %d / %d', length(find(Peak.process)==1),i); disp(' ' );
+            fprintf('number of peaks rejected so far: %d / %d', length(find(Peak.process==2)),Peak.count); disp(' ' );
+            disp('------------------------------------------------------------');
             skip = 1;
 %              tempidx=find(datafull(12,:)==Peak.peakorder(i));
 %              datafull(:,tempidx)=[];

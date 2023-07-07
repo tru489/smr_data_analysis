@@ -26,7 +26,7 @@ freqdata = ydata' - baselinefreq;
 freqbasedata = ybasedata - baselinefreq(xbasedata);
 N=length(freqdata);
 % if N<=101
-    freqsmth = sgolayfilt(freqdata, 3, 21);
+    freqsmth = sgolayfilt(freqdata, 3, 11); % previously 21
 % else
 %     freqsmth = sgolayfilt(freqdata, 3, 101);
 % end
@@ -58,10 +58,15 @@ apkidx_poly = zeros(1,length(antipeaks));
 pkht_poly = zeros(1,length(peaks));
 apkht_poly = zeros(1,length(antipeaks));
 for i = 1:length(peaks)
-    pk_fit_segx = ((xdata(peaks(i)) - pk_fit_wd):(xdata(peaks(i)) + pk_fit_wd))';                 % actual segment of peak to be fitted
+    pk_fit_segx = (max((xdata(peaks(i)) - pk_fit_wd),1):min((xdata(peaks(i)) + pk_fit_wd),length(xdata)))';                 % actual segment of peak to be fitted
     pk_fit_segy = freqdata(pk_fit_segx);
-    polypkeq = polyfit((-pk_fit_wd:pk_fit_wd), pk_fit_segy, 4);                                  % perform quarternary polynomial fit
-    peakfit = polyval(polypkeq, -pk_fit_wd:pk_fit_wd);                                            % evaluate peak fit 
+    polypkeq = polyfit([1:length(pk_fit_segx)], pk_fit_segy, 4);                                  % perform quarternary polynomial fit
+    peakfit = polyval(polypkeq, [1:length(pk_fit_segx)]);       
+    
+    % pk_fit_segx = ((xdata(peaks(i)) - pk_fit_wd):(xdata(peaks(i)) + pk_fit_wd))';                 % actual segment of peak to be fitted
+    % pk_fit_segy = freqdata(pk_fit_segx);
+    % polypkeq = polyfit((-pk_fit_wd:pk_fit_wd), pk_fit_segy, 4);                                  % perform quarternary polynomial fit
+    % peakfit = polyval(polypkeq, -pk_fit_wd:pk_fit_wd);                                            % evaluate peak fit 
     [pky, pkx] = min(peakfit);                                                                    % find peak min value and location
     pkidx_poly(i) = pkx + xdata(peaks(i)) - pk_fit_wd - 1;                                        % adjust the position of peak apex
     pkht_poly(i) = -1*pky;                                                                        % define peak height as vertical distance from fitted peak minimum and 
@@ -74,7 +79,8 @@ for i = 1:length(peaks)
 end
 
 for i = 1:length(antipeaks)
-    antipk_fit_segx = ((xdata(antipeaks(i)) - pk_fit_wd):(xdata(antipeaks(i)) + pk_fit_wd))';     % actual segment of peak to be fitted
+    antipk_fit_segx = (max((xdata(antipeaks(i)) - pk_fit_wd),1):min(length(xdata),(xdata(antipeaks(i)) + pk_fit_wd)))'; 
+    % antipk_fit_segx = ((xdata(antipeaks(i)) - pk_fit_wd):(xdata(antipeaks(i)) + pk_fit_wd))';     % actual segment of peak to be fitted
     antipk_fit_segy = freqdata(antipk_fit_segx);
     polyantipkeq = polyfit((-pk_fit_wd:pk_fit_wd), antipk_fit_segy, 4);                          % perform quarternary polynomial fit
     antipeakfit = polyval(polyantipkeq, -pk_fit_wd:pk_fit_wd);                                    % evaluate peak fit 
