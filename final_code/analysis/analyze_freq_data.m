@@ -1,4 +1,4 @@
-function datafull = analyze_freq_data(run_params, num_segments)
+function datafull = analyze_freq_data(run_params, freqfile)
 % Analyze frequency data to detect peaks.
 %
 % Arguments:
@@ -10,7 +10,16 @@ function datafull = analyze_freq_data(run_params, num_segments)
 scrsize = get(0, 'Screensize');
 figure('OuterPosition',[0 0.05*scrsize(4) scrsize(3) 0.95*scrsize(4)])
 
+% Number of segments in frequency data
+num_segments = get_num_segments(freqfile);
+
+% Preallocate array for peak data
 datafull = zeros(13,1);
+
+% Struct to be passed through each iteration of loop to accumulate data
+pass_struct.elapsed_time = 0;
+pass_struct.samplepeak = [];
+pass_struct.sampletime = [];
 
 i = 0;
 while(1)
@@ -26,22 +35,24 @@ while(1)
 
     % x = read_freq_from_binary(freqfile, datasize);
     
-    fprintf('Processing segment %d of %d...\n', i, num_segments)
+    fprintf('\nProcessing segment %d of %d...\n', i, num_segments)
     time = fread(timefile, datasize, 'float64=>double');
-    datalast = S1_PeakAnalysis_time(-freq, time, datafull, i, ...
-        run_params.analysis_params);
+    [datalast, pass_struct] = S1_PeakAnalysis_time(-freq, time, ...
+        datafull, i, run_params, pass_struct);
     datafull = [datafull datalast];
     
     i = i + 1; % Move to next segment
-        
-    % TODO: what is this plot??
+    
+    % Plot peak heights from polynomial fitting for each individual peak
     if length(freq) < datasize % If loop reaches end of main file, stop
-        figure('OuterPosition', ...
-            [0 0.05*scrsize(4) scrsize(3) 0.95*scrsize(4)])
+        fh = figure('OuterPosition', ...
+            [0 0.05*scrsize(4) scrsize(3) 0.95*scrsize(4)]);
         plot(datafull(1,:), datafull(2,:), '.b')
-        title(strcat('Frequency Data for: ', freqfilepath));
+        title('Frequency Data');
         xlabel('Time (s)')
         ylabel('Frequency (Hz)')
+        saveas(fh, run_params.saving.save_abs_path + filesep + ...
+            "pk_heights.jpg")
         break
     end
 end

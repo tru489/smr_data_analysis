@@ -17,11 +17,10 @@ winsize = round(winsize*peakdist/200);
 % locally smooth ydata again just for baseline finding...
 sgolay_length_idx_base = 7; %this will make default length of 5 for 100 idx index
 sgolay_length_base = 2*round(sgolay_length_idx_base*(peakdist/200))+1;
-if sgolay_length_base >5
-    
-ydata= sgolayfilt(ydata, 3, sgolay_length_base);
+if sgolay_length_base > 5
+    ydata= sgolayfilt(ydata, 3, sgolay_length_base);
 else
-ydata= sgolayfilt(ydata, 3, 5);
+    ydata= sgolayfilt(ydata, 3, 5);
 end
 
 exitflag = 0;
@@ -81,21 +80,6 @@ while exitflag == 0
         right_base = [];
         edgeidx = [];
         return
-        
-        %             fprintf('No valid baselines could be found because selection criteria is too strict. Please adjust parameters. \n')
-        %             fprintf('Previous stdevmultiplier:      %1.3f \n', stdevmultiplier)
-        %             fprintf('Previous diffmultiplier:       %1.3f \n', diffmultiplier)
-        %             fprintf('Previous edgethres:         %1.1f \n', edgethres)
-        %             stdevmultiplier = input('Input new stdevmultiplier:     ');
-        %             diffmultiplier = input('Input new diffmultiplier:      ');
-        %             edgethres = input('Input new edgethres:        ');
-        %             if stdevmultiplier == 0  || diffmultiplier == 0
-        %                 disp('Skipping this peakset...')
-        %                 left_base = [];
-        %                 right_base = [];
-        %                 edgeidx = [];
-        %                 return
-        %             end
     else
         exitflag = 1;
     end

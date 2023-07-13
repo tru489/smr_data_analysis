@@ -4,7 +4,7 @@ function run_params = set_run_params()
 % 
 % Returns: 
 %   run_params (struct): all parameters necessary for running
-%       preprocessing scripts
+%       peak analysis scripts
 
 %% Choose analysis type to run
 % Calculates mass measurements from freq/time data
@@ -22,17 +22,34 @@ run_params.analysis_type.water_content = 0;
 % Manually curate peaks
 run_params.prefs.manual_curation = 0;
 
+%% Peak curation preferences
+% Peak imbalance threshold; max fraction of average of peaks 1 and 3 in 
+% which the secondary peaks are allowed to differ in height
+run_params.curation.pk_imbal_thresh = 0.5;
+% Node imbalance threshold; max fraction of average of peaks 1 and 3 in 
+% which the node heights are allowed to differ
+run_params.curation.nod_imbal_thresh = 0.5;
+% Node deviation threshold; max fraction of the average of peaks 1 and 3
+% allowed for the average node deviation
+run_params.curation.nod_dev_thresh = 0.4;
+
+%% Saving preferences
+% Relative path from raw data dir in which to save processed data files
+run_params.saving.save_rel_path = "analyzed";
+
 %% Mass baseline selection params
 % Estimated # datapoints for full transit
 run_params.bl_select.estimated_datapoints = 500;
 % Estimate of baseline noise level
 run_params.bl_select.estimated_noise = 2;
+% Length of savitsky-golay filter to filter frequency data
+run_params.bl_select.sgolay_length_idx = 4;
 
 % Derivative threshold to find flat part of baseline
 run_params.bl_select.diff_threshold = 0.005;
 % Window of median filter, which removes the flat part in the anti-node
 run_params.bl_select.med_filt_wd = 200;
-% Derivative hreshold used to remove the flat part in the anti-node
+% Derivative threshold used to remove the flat part in the anti-node
 run_params.bl_select.bs_dev_thres = 0.5;
 % Distance over which there are unique 2nd mode peaks
 run_params.bl_select.unqPeakDist = 250;
