@@ -12,9 +12,10 @@ for i = 1:length(analysis_type_fields)
     fld = run_params.analysis_type.(analysis_type_fields{i});
     logical_sum = logical_sum + fld;
 end
-if fld ~= 1
-    error("ValueError: More than one analysis type selected.")
+if logical_sum < 1
+    error("ValueError: No analysis types selected. Select just one.")
+elseif logical_sum > 1
+    error("ValueError: Too many analysis types selected. Select just one.")
 end
 
 end
-

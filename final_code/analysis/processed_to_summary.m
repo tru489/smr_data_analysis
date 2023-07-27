@@ -1,4 +1,4 @@
-function summary_pks_table = processed_to_summary(processed_freq_data)
+function summary_pks = processed_to_summary(processed_freq_data)
 % Takes processed frequency data from preprocessing scripts and converts to
 % summary of peak data used for downstream analysis
 %
@@ -77,12 +77,5 @@ for i=1:length(idx)
     summary_pks(i, 13) = processed_nonzero(6, temp_idx(1));
     summary_pks(i, 16) = processed_nonzero(12, temp_idx(1));
 end
-
-variable_names = {'peak_time_c', 'peak_time_m', 'pk_ht_hz', ...
-    'avg_baseline', 'bl_slope', 'pk_ht1_hz', 'pk_ht2_hz', 'pk_ht3_hz', ...
-    'node_dev_1', 'node_dev_2', 'node_dev_mean', 'pk_fwhm', ...
-    'transit_t', 'segment_num', 'peak_time_h', 'pk_order'};
-summary_pks_table = array2table(summary_pks, ...
-    'VariableNames', variable_names);
 
 end

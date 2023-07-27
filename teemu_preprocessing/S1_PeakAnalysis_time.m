@@ -51,7 +51,7 @@ end
 
 %% ================== estimated data points per frequency peak & noise in system ==============
 %added 03/22/2019
-estimated_datapoints = 500; %for full transit; deafult
+estimated_datapoints = 250; %for full transit; deafult
 estimated_noise = 2; %Hz change from 0.3 to 0.5 on 
 
 sgolay_length_idx = 4; %this will make default length of 5 for 100 idx index

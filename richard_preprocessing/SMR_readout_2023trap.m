@@ -169,7 +169,7 @@ datafull = zeros(13,1); %total of 13 features
 loop=2;
 
 % %Initialize estimated number of datapoints want to test
-estimated_datapoints = 80:10:300;
+estimated_datapoints = 80:10:450;
 
 datasizetest = 5e5;
 num_peaks_compiled = [];
@@ -186,7 +186,7 @@ end
 
 [~,optimized_idx] = max(num_peaks_compiled);
 estimated_datapoints_best = estimated_datapoints(optimized_idx);
-estimated_datapoints_best=100;
+% estimated_datapoints_best=100;
 while(1)
     
     % Creat a column vector of the frequency data in the current block being analyzed  

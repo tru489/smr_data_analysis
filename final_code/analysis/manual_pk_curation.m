@@ -1,5 +1,5 @@
 function datasmr_processed = manual_pk_curation(run_params, samplepeak, ...
-    sampletime, datasmr)
+    sampletime, sample_baseline_fits, datasmr)
 % Manual peak curation for frequency data
 % 
 % Arguments:
@@ -25,11 +25,11 @@ Peak.process = zeros(1, Peak.count); % 2 = peak rejected; 1 = accepted
 Peak.peakorder = zeros(1, Peak.count);
 Peak.start(1) = 1;
 
-disp('-----------------------------------------------');
-fprintf('Total Number Peaks : %d', length(idx0));
+disp('-----------------Manual Peak Curation-----------------');
+fprintf('Total number of peaks: %d', length(idx0));
 
 if length(idx0) ~= length(datasmr)
-    disp('WARNING. Length of sample peaks does not match datasmr!');
+    disp('Length of sample peaks does not match peak detection summary');
     input('Go?');
 end
 
@@ -56,39 +56,20 @@ for j=1:Peak.count
     Peak.sectnum(j) = samplepeak(idx0(j) + 2);
 end
 
-%% Discard peaks with weird node and peak height imbalance
-% Unload parameters
-pk_imbal_thresh = run_params.curation.pk_imbal_thresh;
-nod_imbal_thresh = run_params.curation.nod_imbal_thresh;
-nod_dev_thresh = run_params.curation.nod_dev_thresh;
-
-% Peak imbalance mask; difference of peak 3 and 1 height / average 
-pk_imbal_mask = abs((datasmr(:,6) - datasmr(:,8)) ./ datasmr(:,3)) > ...
-    pk_imbal_thresh;
-
-% Node imbalance mask; difference of node deviations 1 and 2 / 
-% average of peak 3 and 1 height
-nod_imbal_mask = abs((datasmr(:,9) - datasmr(:,10)) ./ datasmr(:,3)) > ...
-    nod_imbal_thresh;
-
-% Node deviation mask; average node deviation between nodes 1 and 2 / 
-% average of peak 1 and 3 height
-nod_dev_mask = abs(datasmr(:,11) ./ datasmr(:,3)) > nod_dev_thresh;
-
-% Indices to discard
-idx_discard = find(pk_imbal_mask | nod_imbal_mask | nod_dev_mask);
+%% Discard peaks with weird node and peak height imbalance (auto-discard)
+idx_discard = auto_discard_peaks(run_params.curation, datasmr);
 
 % Mark peaks for discarding
 Peak.process(idx_discard) = 2;
-fprintf('#of peaks pre-discarded: %d', length(idx_discard));
+fprintf('# of peaks automatically discarded: %d', length(idx_discard));
 disp('-----------------------------------------------');
 
 %% Iterate through peaks for manual curation
 scrsize = get(0, 'Screensize');
-figure('OuterPosition',[0 0.05*scrsize(4) scrsize(3) 0.95*scrsize(4)])
+figure('OuterPosition', [0 0.05*scrsize(4) scrsize(3) 0.95*scrsize(4)])
 
 exit_flag = 0;
-i= 0 ;
+i = 0;
 
 while i < length(idx0)
     i=i+1;
@@ -103,17 +84,27 @@ while i < length(idx0)
         if i == Peak.count % final peak in array
             peak = samplepeak(Peak.start(i):idx0(end)-1);
             time = sampletime(Peak.start(i):idx0(end)-1);
-        elseif ismember(i, idx_discard) ==1
-            disp('Peak marked for auto-discard. Jumping to next one');
+            bl_fit = sample_baseline_fits(Peak.start(i):idx0(end)-1);
+        elseif ismember(i, idx_discard)
+            disp('Peak marked for auto-discard. Jumping to next');
             break;
         else % If peak not marked for auto-discard
             peak = samplepeak(Peak.start(i):Peak.start(i+1)-4);
             time = sampletime(Peak.start(i):Peak.start(i+1)-4);
+            bl_fit = sample_baseline_fits(Peak.start(i):Peak.start(i+1)-4);
         end
         
         % Set peak to baseline of 0 for plotting
-        peak = peak-median(peak);
-        plot(time, peak);
+        peak = peak - median(peak);
+        
+        hold on;
+        plot(time, peak, 'b', 'LineWidth', 1.5);
+        if run_params.curation.disp_bl_fit
+            bl_fit = bl_fit - median(peak);
+            plot(time, bl_fit, 'r--', 'LineWidth', 1.5)
+        end
+        title(sprintf('Peak %d / %d', i, length(idx0) - i))
+        hold off;
 
         fprintf('Peak #%d / %d', i, length(idx0)-i);
         evaluate_fit = getkey('non-ascii'); 
@@ -163,4 +154,3 @@ end
 datasmr_processed = datasmr(dataidx,:);
 
 end
-

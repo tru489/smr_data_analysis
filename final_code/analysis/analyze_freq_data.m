@@ -1,14 +1,23 @@
-function datafull = analyze_freq_data(run_params, freqfile)
+function [datafull, pass_struct] = analyze_freq_data(run_params, ...
+    freqfile, timefile)
 % Analyze frequency data to detect peaks.
 %
 % Arguments:
-%   analysispararms (struct): 
-%   num_segments (int): number of datasegments to iterate through in
-%       frequency data
+%   run_params (struct): running parameters for analysis
+%   freqfile (file handle): file handle for binary file with frequency
+%       data
+%   timefile (file handle): file handle for binary file with time
+%       data
+% Returns:
+%   datafull (array(double)): array of peakwise (not peakset-wise)
+%       unprocessed peak data
+%   pass_struct (struct): struct containing data that is passed through
+%       each iteration of peak detection routine. Contains data necessary
+%       for manual peak curation and real time visualization of data as
+%       analysis is happening
 
-% TODO: what is this??
 scrsize = get(0, 'Screensize');
-figure('OuterPosition',[0 0.05*scrsize(4) scrsize(3) 0.95*scrsize(4)])
+figure('OuterPosition',[0 0.05 * scrsize(4) scrsize(3) 0.95 * scrsize(4)])
 
 % Number of segments in frequency data
 num_segments = get_num_segments(freqfile);
@@ -20,6 +29,7 @@ datafull = zeros(13,1);
 pass_struct.elapsed_time = 0;
 pass_struct.samplepeak = [];
 pass_struct.sampletime = [];
+pass_struct.sample_baseline_fits = [];
 
 i = 0;
 while(1)

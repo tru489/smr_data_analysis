@@ -20,7 +20,7 @@ data=data(ix,:); %sort data by time
 %%Teemu's system 02/24/2020
 v1=11; %BM1; in media
 v2=7; %BM2; in optiprep
-calT = 0.79202; %pg/hz
+calT = 0.8326; %pg/hz
 
 %%baseline check
 
@@ -109,8 +109,8 @@ disp(' ' );
 input('Move Forward?');
 
 
-reffreq1 = input('Type in reference freq for BM1:    ');     % 1185000
-reffreq2 = input('Type in reference freq for BM2:    ');    % 1160750
+reffreq1 = input('Type in reference freq for BM1:    ');     % 1162704
+reffreq2 = input('Type in reference freq for BM2:    ');    % 1149042
 
 
 
@@ -137,8 +137,8 @@ reffreq2 = input('Type in reference freq for BM2:    ');    % 1160750
 %     
 
 % here adjust the slow but consistent baseline drop
-intercept = 1329074.56652;
-slope = -144716.55126;
+intercept = 1311864.6829;
+slope = -148677.2764; 
     
     pair_data(:,6)=(reffreq1-pair_data(:,4)-intercept)./slope; %baseline_1 density
     pair_data(:,14)=(reffreq2-pair_data(:,12)-intercept)./slope; %baseline_2 density
@@ -149,7 +149,6 @@ slope = -144716.55126;
 
     writematrix(pair_data, [data_path 'paired_peak_data.csv']);
 end
-
 
 % COLUMNS of pair_data variable explained here:
 % 1: cell number

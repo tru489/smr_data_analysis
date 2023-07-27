@@ -7,6 +7,13 @@ function run_params = set_run_params()
 %       peak analysis scripts
 
 %% Choose analysis type to run
+% ------------------------- Calibration types -------------------------
+% Performs mass calibration from bead data
+run_params.analysis_type.mass_calibration = 0;
+% Performs density calibration from data from different density fluids
+run_params.analysis_type.base_freq_density_calibration = 1;
+
+% --------------------------- Analysis types ---------------------------
 % Calculates mass measurements from freq/time data
 run_params.analysis_type.mass = 0;
 % Calculates mass/volume from freq/time/fluorescence data
@@ -22,6 +29,18 @@ run_params.analysis_type.water_content = 0;
 % Manually curate peaks
 run_params.prefs.manual_curation = 0;
 
+%% Mass calibration preferences
+run_params.mass_cal.save_peak_summary = 1;
+
+%% Density trapping analysis preferences
+% Valve state codes indicating whether fluid is in first or second density
+% trap fluid
+run_params.density_trap.fluid1_vstate = 11;
+run_params.density_trap.fluid2_vstate = 7;
+
+% Whether or not to save paired data 
+run_params.density_trap.save_pairing = 1;
+
 %% Peak curation preferences
 % Peak imbalance threshold; max fraction of average of peaks 1 and 3 in 
 % which the secondary peaks are allowed to differ in height
@@ -33,9 +52,12 @@ run_params.curation.nod_imbal_thresh = 0.5;
 % allowed for the average node deviation
 run_params.curation.nod_dev_thresh = 0.4;
 
-%% Saving preferences
-% Relative path from raw data dir in which to save processed data files
-run_params.saving.save_rel_path = "analyzed";
+% Display baseline fit for each peak when curating
+run_params.curation.disp_bl_fit = 1;
+
+% Automatically reject peaks based on auto-reject criteria EVEN IF manual
+% peak curation is not picked
+run_params.curation.always_auto_reject = 1;
 
 %% Mass baseline selection params
 % Estimated # datapoints for full transit
@@ -44,6 +66,9 @@ run_params.bl_select.estimated_datapoints = 500;
 run_params.bl_select.estimated_noise = 2;
 % Length of savitsky-golay filter to filter frequency data
 run_params.bl_select.sgolay_length_idx = 4;
+% Lower threshold to half-length (in datapoints) of data segment
+% surrounding a single peak
+run_params.bl_select.segment_threshold = 200;
 
 % Derivative threshold to find flat part of baseline
 run_params.bl_select.diff_threshold = 0.005;

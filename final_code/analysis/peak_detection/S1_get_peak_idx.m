@@ -1,11 +1,16 @@
-function peak_idx = S1_get_peak_idx(idx, ydata)
+function peak_idx = S1_get_peak_idx(run_params, idx, ydata)
 % From ydata, gets peak indices pre-segmentation. Returns final peak index 
 % in each set of 3 peaks.
 % 
 % Arguments:
+%   run_params (struct): running parameters
 %   idx (array(int)): indices within ydata which cross the offset
 %       threshold for peak detection
 %   ydata (array(double)): frequency data
+% Returns:
+%   peak_idx (array(int)): 
+
+unqPeakDist = run_params.bl_select.unqPeakDist;
 
 % Find all breaks in y_diff indices; each segment is a peak of 
 % interest, with end on idx_end and start on (idx_end + 1)
@@ -18,10 +23,12 @@ for i = 1:length(idx_ends) - 1
     % Focus on the piece of y_diff between two consecutive idx_end 
     % markers
     ydata_segment = ydata(idx(idx_ends(i)+1:idx_ends(i + 1)));
+    
     % Find index of the maximum deviation, i.e. the apex within 
     % the piece
     segment_idx_max = find(ydata_segment == min(ydata_segment), 1);
     global_idx_max = idx(idx_ends(i) + 1) + segment_idx_max - 1;
+    
     % Convert the apex index to the global index within y_diff 
     peak_idx(i) = global_idx_max(1);
 end
