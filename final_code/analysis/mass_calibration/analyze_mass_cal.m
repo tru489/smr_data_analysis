@@ -1,10 +1,11 @@
-function analyze_mass_cal(datasmr, save_dir)
+function analyze_mass_cal(run_params, datasmr, save_dir)
 % Analyzes peakset data summary from a run of magnetic beads to product
 % calibration information. Requires input of bead/carrier fluid data.
 % Produces filtered peakset summary (optional) and json with important
 % calibration information (required for all analysis types)
 %
 % Arguments:
+%   run_params (struct): parameters necessary for running analysis
 %   datasmr (array(double)): peakset summary array 
 %   save_dir (str): dir in which to save json/filtered peakset summary
 
@@ -90,15 +91,16 @@ if run_params.mass_cal.save_peak_summary
         'pk_order', 'mass_pg'};
     summary_pks_table = array2table(datasmr_pg_masses, ...
         'VariableNames', variable_names);
-    writetable(summary_pks_table, save_dir + filesep + 'peak_data.csv')
+    writetable(summary_pks_table, fullfile(save_dir, "peak_data.csv"))
 end
 
 st.ground_truth_mass_pg = gt_mass;
 st.avg_freq_hz = avg_freq;
 st.cal_factor_pg_per_hz = cal_factor;
 st.cv_mass = std(cal_freqs) / mean(cal_freqs);
-jsonID = fopen(save_dir + filesep + "calibration_params.json", 'w');
+jsonID = fopen(fullfile(save_dir, "calibration_params.json"), 'w');
 js_str = jsonencode(st, PrettyPrint=true);
 fprintf(jsonID, js_str);
+fclose(jsonID);
 
 end

@@ -17,6 +17,7 @@ if ind ~= 0
 else
     error("IOError: JSON file not selected")
 end
+fclose(f_handle);
 
 end
 

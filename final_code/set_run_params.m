@@ -9,13 +9,13 @@ function run_params = set_run_params()
 %% Choose analysis type to run
 % ------------------------- Calibration types -------------------------
 % Performs mass calibration from bead data
-run_params.analysis_type.mass_calibration = 0;
+run_params.analysis_type.mass_calibration = 1;
 % Performs density calibration from data from different density fluids
 run_params.analysis_type.base_freq_density_calibration = 0;
 
 % --------------------------- Analysis types ---------------------------
 % Calculates mass measurements from freq/time data
-run_params.analysis_type.mass = 1;
+run_params.analysis_type.mass = 0;
 % Calculates mass/volume from freq/time/fluorescence data
 run_params.analysis_type.fl_excl = 0;
 % Calculates density/volume from density trapping data (i.e. freq in two 
