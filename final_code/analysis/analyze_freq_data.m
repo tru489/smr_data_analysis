@@ -32,12 +32,14 @@ pass_struct.sampletime = [];
 pass_struct.sample_baseline_fits = [];
 
 i = 0;
+datasize = run_params.backend.datasize;
+
 while(1)
     % Flip to the next frequency data segment piece 8*datasize bytes ahead
-    fseek(freqfile, i*8*datasize, 'bof');   % datatype double is 8bytes
+    fseek(freqfile, i * 8 * datasize, 'bof');   % datatype double is 8bytes
 
     % Flip to the next time data segment piece 8*datasize bytes ahead
-    fseek(timefile, i*8*datasize, 'bof'); % datatype int is 8bytes
+    fseek(timefile, i * 8 * datasize, 'bof'); % datatype int is 8bytes
     
     % Read data starting at i*8*datasize. x is a column vector of frequency
     % data from current segment

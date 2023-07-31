@@ -1,12 +1,13 @@
-function peak_idx = S1_get_peak_idx(run_params, idx, ydata)
+function peak_idx = S1_get_peak_idx(run_params, xdata, ydata, idx)
 % From ydata, gets peak indices pre-segmentation. Returns final peak index 
 % in each set of 3 peaks.
 % 
 % Arguments:
 %   run_params (struct): running parameters
+%   xdata (array(double)): indices of frequency data
+%   ydata (array(double)): frequency data
 %   idx (array(int)): indices within ydata which cross the offset
 %       threshold for peak detection
-%   ydata (array(double)): frequency data
 % Returns:
 %   peak_idx (array(int)): 
 

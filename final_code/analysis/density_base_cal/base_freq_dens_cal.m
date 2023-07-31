@@ -18,7 +18,8 @@ else
 end
 
 % Create results dir
-save_dir = create_results_dir(run_params, dir);
+run_params.saving.save_abs_path = create_results_dir(run_params, dir);
+save_dir = run_params.saving.save_abs_path;
 
 density = data_table.density;
 freq = data_table.feedback_freq;

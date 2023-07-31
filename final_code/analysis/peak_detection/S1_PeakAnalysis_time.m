@@ -43,23 +43,17 @@ end
 xdata = (1:length(ydata))';
 
 % Modify baseline selection parameters
+run_params = S1_bl_select_compensate(run_params, estimated_noise, ...
+    estimated_datapoints);
+
+% Derivative threshold to find flat part of baseline
 diff_threshold = run_params.bl_select.diff_threshold;
+% Window of median filter, which removes the flat part in the anti-node
 med_filt_wd = run_params.bl_select.med_filt_wd;
+% Derivative threshold used to remove the flat part in the anti-node
 bs_dev_thres = run_params.bl_select.bs_dev_thres;
-unqPeakDist = run_params.bl_select.unqPeakDist;
+% Baseline offset threshold to select for peaks
 offset_input = run_params.bl_select.offset_input;
-
-diff_threshold = diff_threshold * ((estimated_noise / 0.1)^(1/2)) / ...
-    (estimated_datapoints / 400);
-med_filt_wd = round(med_filt_wd * estimated_datapoints / 400);
-bs_dev_thres = bs_dev_thres * ((estimated_noise / 0.1)^(1/2));
-unqPeakDist = round(unqPeakDist * estimated_datapoints / 400);
-
-run_params.bl_select.diff_threshold = diff_threshold;
-run_params.bl_select.med_filt_wd = med_filt_wd;
-run_params.bl_select.bs_dev_thres = bs_dev_thres;
-run_params.bl_select.unqPeakDist = unqPeakDist;
-run_params.bl_select.offset_input = offset_input;
 
 % Remove fast varying points (i.e. pts with high derivative) from 
 % baseline
@@ -88,7 +82,7 @@ idx = find(ydata < ydata_thres);
 % Iterate through indices at which peaks were identified to find peak 
 % indices
 if ~isempty(idx)
-    peak_idx = S1_get_peak_idx(run_params, idx, ydata);
+    peak_idx = S1_get_peak_idx(run_params, xdata, ydata, idx);
 else
     disp('No peak found; moving to next segment');
     pk_data = zeros(13,1); 
@@ -143,8 +137,8 @@ for i = 1:length(peak_idx)
         % Identify primary and secondary peak apex indices within 
         % segment
         disp('Locating segment peaks...')
-        peaks = S2_PeaksetFinder(local_xdata, local_ydata, ...
-            offset_input, baseparams, analysismode);
+        peaks = S2_PeaksetFinder(run_params, local_xdata, local_ydata, ...
+            offset_input, baseparams);
         
         if numel(peaks) == 3
             % Distances (idx) between first and last of three 2nd mode

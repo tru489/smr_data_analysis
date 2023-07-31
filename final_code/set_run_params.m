@@ -11,11 +11,11 @@ function run_params = set_run_params()
 % Performs mass calibration from bead data
 run_params.analysis_type.mass_calibration = 0;
 % Performs density calibration from data from different density fluids
-run_params.analysis_type.base_freq_density_calibration = 1;
+run_params.analysis_type.base_freq_density_calibration = 0;
 
 % --------------------------- Analysis types ---------------------------
 % Calculates mass measurements from freq/time data
-run_params.analysis_type.mass = 0;
+run_params.analysis_type.mass = 1;
 % Calculates mass/volume from freq/time/fluorescence data
 run_params.analysis_type.fl_excl = 0;
 % Calculates density/volume from density trapping data (i.e. freq in two 
@@ -25,11 +25,18 @@ run_params.analysis_type.density_trap = 0;
 % fluids/time/fluorescence data)
 run_params.analysis_type.water_content = 0;
 
-%% Preprocessing preferences
+%% Analysis mode (for all analysis types)
+% Analysis mode; false stops at each peak, true runs through all peaks
+run_params.analysis_params.analysismode = 1;
+% Display progress with plots
+run_params.analysis_params.dispprogress = 0;
+
+%% Peak analysis preferences
 % Manually curate peaks
 run_params.prefs.manual_curation = 0;
 
 %% Mass calibration preferences
+% Save peak summary raw data
 run_params.mass_cal.save_peak_summary = 1;
 
 %% Density trapping analysis preferences
@@ -89,6 +96,9 @@ run_params.bl_select.stdevmultiplier = 3;
 run_params.bl_select.diffmultiplier = 1;
 % Number of points searching for baseline collection
 run_params.bl_select.winsize = 120;
+
+%% Backend parameters for data processing
+run_params = set_backend_params(run_params);
 
 %% Input validation
 validate_params(run_params)

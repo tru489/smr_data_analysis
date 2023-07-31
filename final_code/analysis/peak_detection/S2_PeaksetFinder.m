@@ -1,6 +1,21 @@
-function [peaks] = S2_PeaksetFinder(xdata, ydata, offset_input, ...
-    baseparams, analysismode)
-% TODO: write docstring
+function peaks = S2_PeaksetFinder(run_params, xdata, ydata, offset_input, ...
+    baseparams)
+% Given section of x and y data, identify indices of peaks in peakset
+%
+% Arguments:
+%   run_params (struct): running parameters for analysis
+%   xdata (array(double)): indices for frequency data within this data slice 
+%       (i.e. for this peakset)
+%   ydata (array(double)): frequency data
+%   offset_input (double): offset from frequency baseline beyond which
+%       deviations should be classed as a peak within this peakset
+%   baseparams (struct): parameters for identifying baseline within this
+%       data slice
+% Returns:
+%   peaks (array(double)): global indices of apices of frequency data peaks
+
+%% Unload parameters
+analysismode = run_params.analysis_params.analysismode;
 
 diff_threshold = baseparams.diff_threshold;
 med_filt_wd = baseparams.med_filt_wd;
@@ -8,6 +23,7 @@ bs_dev_thres = baseparams.bs_dev_thres;
 
 idx = find(abs(diff(ydata)) < diff_threshold);
 
+%% Identify peakset
 % Ignore the flat points found over the anti-node
 mf_ydata_thres = medfilt1(ydata(idx), med_filt_wd);
 idx_f = abs(ydata(idx) - mf_ydata_thres) < bs_dev_thres;
@@ -29,7 +45,7 @@ ydata_thres = interp1(xdata(idx), ydata(idx), xdata);
 ydata = smooth(ydata, 3);
 minpkht_thres = ydata_thres - offset_input;
 
-if analysismode == 0
+if ~analysismode
     hold off;
     figure(1);
     
@@ -57,7 +73,6 @@ while repeatflag
         % interest, with end on idx_end and start on (idx_end + 1)
         idx_ends = find(abs(diff(pkidx)) > 1);
         idx_ends = [0 idx_ends' length(pkidx)];
-
 
         peaks = zeros(1, length(idx_ends) - 1);
         
@@ -95,21 +110,15 @@ while repeatflag
         
         goflag = 0;
         if mod(length(peaks), 3) ~= 0 
-            disp('Warning: the number of peaks found is not a multiple of three. Check plot.')
+            disp(['Warning: the number of peaks found is not a multiple ' ...
+                'of three. Check plot.'])
             if length(peaks) == 1
                 disp('Skipping this peak set. There is only one peak..');
                 peaks = [];
                 repeatflag = 0;
             end
-            
-            if checkthres == 1
-                fprintf('Previous threshold multiplier:   %3.0f \n', ...
-                    minpkht_thres);
-                minpkht_thres = input('Input new threshold: ');
-            else
-                goflag = 1;
-            end
-            
+
+            goflag = 1;
         else
             goflag = 1;
         end
@@ -129,7 +138,7 @@ while repeatflag
         set(gca,'YLim',[min(ydata) - 10 max(ydata) + 10]);
         disp('No peaks were found. Please adjust threshold baseline.')
         peaks = [];
-        repeatflag=0;
+        repeatflag = 0;
     end
     
 end

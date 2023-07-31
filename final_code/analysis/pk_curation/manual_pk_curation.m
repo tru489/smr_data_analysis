@@ -95,34 +95,36 @@ while i < length(idx0)
         end
         
         % Set peak to baseline of 0 for plotting
-        peak = peak - median(peak);
+        pk_median = median(peak);
+        peak = peak - pk_median;
         
+        clf;
         hold on;
         plot(time, peak, 'b', 'LineWidth', 1.5);
         if run_params.curation.disp_bl_fit
-            bl_fit = bl_fit - median(peak);
+            bl_fit = bl_fit - pk_median;
             plot(time, bl_fit, 'r--', 'LineWidth', 1.5)
         end
-        title(sprintf('Peak %d / %d', i, length(idx0) - i))
+        title(sprintf('Peak %d / %d\n', i, length(idx0) - i))
         hold off;
 
-        fprintf('Peak #%d / %d', i, length(idx0)-i);
+        fprintf('Peak #%d / %d\n', i, length(idx0)-i);
         evaluate_fit = getkey('non-ascii'); 
         if evaluate_fit == 'a' % Accept the peak
             Peak.process(i) =  1;
             skip = 1;
             disp('ACCEPTED');
             disp('------------------------------------------------------');
-            fprintf('    # peaks accepted so far: %d / %d', ...
+            fprintf('    # peaks accepted so far: %d / %d\n', ...
                 length(find(Peak.process == 1)), i);
-            fprintf('    # peaks rejected so far: %d / %d', ...
+            fprintf('    # peaks rejected so far: %d / %d\n', ...
                 length(find(Peak.process == 2)), Peak.count);
             disp('------------------------------------------------------');
             
             % Find index of peak in datasmr summary array to mark the peak
             % for retention
             tempidx = find(datasmr(:,14) == Peak.sectnum(i) & ...
-                datasmr(:,17) == Peak.peakorder(i));
+                datasmr(:,16) == Peak.peakorder(i));
             if tempidx == i
                 disp('Matches well!');
             end
@@ -140,9 +142,9 @@ while i < length(idx0)
             Peak.process(i) = 2;  
             disp('REJECTED');
             disp('------------------------------------------------------');
-            fprintf('    # of peaks selected so far: %d / %d', ...
+            fprintf('    # of peaks selected so far: %d / %d\n', ...
                 length(find(Peak.process == 1)), i);
-            fprintf('    # of peaks rejected so far: %d / %d', ...
+            fprintf('    # of peaks rejected so far: %d / %d\n', ...
                 length(find(Peak.process == 2)), Peak.count);
             disp('------------------------------------------------------');
             skip = 1;

@@ -27,6 +27,6 @@ nod_imbal_mask = abs((datasmr(:,9) - datasmr(:,10)) ./ datasmr(:,3)) > ...
 nod_dev_mask = abs(datasmr(:,11) ./ datasmr(:,3)) > nod_dev_thresh;
 
 % Indices to discard
-idx_discard = find(pk_imbal_mask | nod_imbal_mask | nod_dev_mask);
+idx_discard = find(~(pk_imbal_mask | nod_imbal_mask | nod_dev_mask));
 
 end

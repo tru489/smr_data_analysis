@@ -47,6 +47,14 @@ for i=1:length(idx)
         temp_idx = idx(i) + 1:idx(i+1);
     end
     
+    % Peak heights
+    m1 = processed_nonzero(2, temp_idx(1));
+    m3 = processed_nonzero(2, temp_idx(end));
+    
+    % Node deviations
+    nd1 = processed_nonzero(8, temp_idx(1));
+    nd2 = processed_nonzero(8, temp_idx(2));
+
     % Times of first and last peaks
     t1 = processed_nonzero(1, temp_idx(1));
     t2 = processed_nonzero(1, temp_idx(end));
@@ -66,12 +74,12 @@ for i=1:length(idx)
     summary_pks(i, 1) = mean([t1, t2]);
     summary_pks(i, 2) = mean([t1, t2]) / 60;
     summary_pks(i, 15) = mean([t1, t2]) / 3600;
-    summary_pks(i, 3) = mean([m1(i), m3(i)]);
-    summary_pks(i, 4) = mean([b1(i), b2(i)]);
+    summary_pks(i, 3) = mean([m1, m3]);
+    summary_pks(i, 4) = mean([b1, b2]);
     summary_pks(i, 12) = processed_nonzero(9, temp_idx(1));
     summary_pks(i, 9) = processed_nonzero(8, temp_idx(1));
     summary_pks(i, 10) = processed_nonzero(8, temp_idx(2));
-    summary_pks(i, 11) = mean([nd1(i), nd2(i)]);
+    summary_pks(i, 11) = mean([nd1, nd2]);
     summary_pks(i, 5) = processed_nonzero(7, temp_idx(1));
     summary_pks(i, 14) = processed_nonzero(10, temp_idx(1));
     summary_pks(i, 13) = processed_nonzero(6, temp_idx(1));
