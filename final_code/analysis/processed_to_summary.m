@@ -1,32 +1,29 @@
-function summary_pks = processed_to_summary(processed_freq_data)
+function summary_pks = processed_to_summary(run_params, processed_freq_data, init_time, ...
+    mass_cal_factor)
 % Takes processed frequency data from preprocessing scripts and converts to
 % summary of peak data used for downstream analysis
 %
 % Arguments:
+%   run_params (struct): running params for analysis
 %   processed_freq_data (double): processed frequency peak data from
 %       preprocessing scripts
+%   init_time (double): initial global time at which the first data
+%       acquisition event ocurred in order to allow for comparability with
+%       PMT data
+%   mass_cal_factor (double): pg to Hz mass calibration factor. Optional;
+%       if not specified than this function is likely being called for mass
+%       calibration
 % Returns:
-%   summary_pks_table (table): table containing summary peak information
-% 
-% 
-% The following are the column labels for each column in the summary data:
-%   (1) peak_time_s (time at which peak occurred in seconds)
-%   (2) peak_time_m (time at which peak occurred in minutes)
-%   (3) pk_ht_hz (mean of secondary peak heights in hz)
-%   (4) avg_baseline (average baseline of left and right peaks)
-%   (5) bl_slope (baseline slope)
-%   (6) pk_ht1_hz (height of peak 1)
-%   (7) pk_ht2_hz (height of peak 2)
-%   (8) pk_ht3_hz (height of peak 3)
-%   (9) node_dev_1 (node deviation of node 1)
-%   (10) node_dev_2 (node deviation of node 2)
-%   (11) node_dev_mean (mean of node deviations)
-%   (12) pk_fwhm (FWHM of first peak)
-%   (13) transit_t (transit time in ms of particle)
-%   (14) segment_num (segment number in which peak ocurred)
-%   (15) peak_time_h (time at which peak occurred in hours)
-%   (16) pk_order (peak index within total peak list)
+%   summary_pks (table): table containing summary peak information
 
+arguments
+    run_params
+    processed_freq_data
+    init_time
+    mass_cal_factor = NaN
+end
+
+%% Convert processed individual peak data to peak summary data
 % Filter out zero columns
 idx_nonzero = processed_freq_data(12,:) > 0;
 processed_nonzero = processed_freq_data(:, idx_nonzero);
@@ -36,7 +33,25 @@ idx = find(diff(processed_nonzero(12,:)) ~= 0);
 idx = [0 idx];
 
 % Preallocate summary array
-summary_pks = zeros(length(idx), 16);
+pk_ht1_hz = zeros(length(idx), 1);
+pk_ht2_hz = zeros(length(idx), 1);
+pk_ht3_hz = zeros(length(idx), 1);
+real_time_s = zeros(length(idx), 1);
+peak_time_s = zeros(length(idx), 1);
+peak_time_m = zeros(length(idx), 1);
+peak_time_h = zeros(length(idx), 1);
+avg_pk_ht_hz = zeros(length(idx), 1);
+avg_baseline = zeros(length(idx), 1);
+pk_fwhm = zeros(length(idx), 1);
+node_dev_1 = zeros(length(idx), 1);
+node_dev_2 = zeros(length(idx), 1);
+node_dev_mean = zeros(length(idx), 1);
+bl_slope = zeros(length(idx), 1);
+segment_num = zeros(length(idx), 1);
+transit_t = zeros(length(idx), 1);
+pk_order = zeros(length(idx), 1);
+valve_state = zeros(length(idx), 1);
+mass_pg = zeros(length(idx), 1);
 
 % Iterate through each unique peak set
 for i=1:length(idx)
@@ -60,9 +75,9 @@ for i=1:length(idx)
     t2 = processed_nonzero(1, temp_idx(end));
     
     % Heights of left, middle, and right peaks
-    summary_pks(i, 6) = processed_nonzero(2, temp_idx(1));
-    summary_pks(i, 7) = processed_nonzero(2, temp_idx(2));
-    summary_pks(i, 8) = processed_nonzero(2, temp_idx(end));
+    pk_ht1_hz(i) = processed_nonzero(2, temp_idx(1));
+    pk_ht2_hz(i) = processed_nonzero(2, temp_idx(2));
+    pk_ht3_hz(i) = processed_nonzero(2, temp_idx(end));
     
     % Average baseline of left and right peak
     b1 = mean([processed_nonzero(4, temp_idx(1)) ...
@@ -71,19 +86,41 @@ for i=1:length(idx)
         processed_nonzero(5, temp_idx(end))]);
     
     % Populate summary pk array
-    summary_pks(i, 1) = mean([t1, t2]);
-    summary_pks(i, 2) = mean([t1, t2]) / 60;
-    summary_pks(i, 15) = mean([t1, t2]) / 3600;
-    summary_pks(i, 3) = mean([m1, m3]);
-    summary_pks(i, 4) = mean([b1, b2]);
-    summary_pks(i, 12) = processed_nonzero(9, temp_idx(1));
-    summary_pks(i, 9) = processed_nonzero(8, temp_idx(1));
-    summary_pks(i, 10) = processed_nonzero(8, temp_idx(2));
-    summary_pks(i, 11) = mean([nd1, nd2]);
-    summary_pks(i, 5) = processed_nonzero(7, temp_idx(1));
-    summary_pks(i, 14) = processed_nonzero(10, temp_idx(1));
-    summary_pks(i, 13) = processed_nonzero(6, temp_idx(1));
-    summary_pks(i, 16) = processed_nonzero(12, temp_idx(1));
+    real_time_s(i) = mean([t1, t2]) + init_time;
+    peak_time_s(i) = mean([t1, t2]);
+    peak_time_m(i) = mean([t1, t2]) / 60;
+    peak_time_h(i) = mean([t1, t2]) / 3600;
+    avg_pk_ht_hz(i) = mean([m1, m3]);
+    avg_baseline(i) = mean([b1, b2]);
+    pk_fwhm(i) = processed_nonzero(9, temp_idx(1));
+    node_dev_1(i) = processed_nonzero(8, temp_idx(1));
+    node_dev_2(i) = processed_nonzero(8, temp_idx(2));
+    node_dev_mean(i) = mean([nd1, nd2]);
+    bl_slope(i) = processed_nonzero(7, temp_idx(1));
+    segment_num(i) = processed_nonzero(10, temp_idx(1));
+    transit_t(i) = processed_nonzero(6, temp_idx(1));
+    pk_order(i) = processed_nonzero(12, temp_idx(1));
+    valve_state(i) = processed_nonzero(13, temp_idx(2));
+
+    if ~isnan(mass_cal_factor)
+        mass_pg(i) = avg_pk_ht_hz(i) * mass_cal_factor;
+    end
+end
+
+variable_names = {'real_time_s', 'peak_time_s', 'peak_time_m', 'peak_time_h', ...
+        'avg_baseline', 'bl_slope', 'pk_fwhm', 'transit_t', 'valve_state', ...
+        'pk_order', 'segment_num', 'pk_ht1_hz', 'pk_ht2_hz', 'pk_ht3_hz', ...
+        'node_dev_1', 'node_dev_2', 'node_dev_mean', 'avg_pk_ht_hz', 'mass_pg'};
+summary_arr = [real_time_s, peak_time_s, peak_time_m, peak_time_h, ...
+    avg_baseline, bl_slope, pk_fwhm, transit_t, valve_state, pk_order, ...
+    segment_num, pk_ht1_hz, pk_ht2_hz, pk_ht3_hz, node_dev_1, node_dev_2, ...
+    node_dev_mean, avg_pk_ht_hz, mass_pg];
+
+if ~isnan(mass_cal_factor)
+    summary_pks = array2table(summary_arr, 'VariableNames', variable_names);
+else
+    summary_pks = array2table(summary_arr(:, 1:end-1), ...
+        'VariableNames', variable_names(1:end-1));
 end
 
 end

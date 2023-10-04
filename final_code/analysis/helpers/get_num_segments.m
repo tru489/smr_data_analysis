@@ -13,7 +13,7 @@ arguments
 end
 
 n = 0;
-while(fseek(freqfile, n*8*datasize, 'bof') == 0)
+while fseek(freqfile, n*8*datasize, 'bof') == 0 
     % flip forward 8*datasize bytes repeatedly until file ends
     n = n + 1;
 end     

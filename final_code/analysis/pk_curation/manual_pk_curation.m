@@ -16,7 +16,7 @@ function datasmr_processed = manual_pk_curation(run_params, samplepeak, ...
 % samplepeak looks like [(..data...), 1000, pkorder, sectionnumber, etc...]
 % Finds the number of peaks (i.e. number of "1000s" in array)
 dataidx = [];
-idx0 = find(samplepeak == 1e3);
+idx0 = find(isnan(samplepeak));
 
 % Creates local struct to store high-level peak data
 Peak.count = length(idx0);
@@ -28,7 +28,7 @@ Peak.start(1) = 1;
 disp('-----------------Manual Peak Curation-----------------');
 fprintf('Total number of peaks: %d', length(idx0));
 
-if length(idx0) ~= length(datasmr)
+if length(idx0) ~= height(datasmr)
     disp('Length of sample peaks does not match peak detection summary');
     input('Go?');
 end
@@ -57,7 +57,11 @@ for j=1:Peak.count
 end
 
 %% Discard peaks with weird node and peak height imbalance (auto-discard)
-idx_discard = auto_discard_peaks(run_params.curation, datasmr);
+if run_params.curation.auto_rejection
+    idx_discard = auto_discard_peaks(run_params, run_params.curation, datasmr);
+else
+    idx_discard = [];
+end
 
 % Mark peaks for discarding
 Peak.process(idx_discard) = 2;
@@ -66,11 +70,12 @@ disp('-----------------------------------------------');
 
 %% Iterate through peaks for manual curation
 scrsize = get(0, 'Screensize');
-figure('OuterPosition', [0 0.05*scrsize(4) scrsize(3) 0.95*scrsize(4)])
+fh = figure('OuterPosition', [0 0.05*scrsize(4) scrsize(3) 0.95*scrsize(4)]);
 
 exit_flag = 0;
 i = 0;
 
+manual_exit_flag = 0;
 while i < length(idx0)
     i=i+1;
     
@@ -105,7 +110,7 @@ while i < length(idx0)
             bl_fit = bl_fit - pk_median;
             plot(time, bl_fit, 'r--', 'LineWidth', 1.5)
         end
-        title(sprintf('Peak %d / %d\n', i, length(idx0) - i))
+        title(sprintf('Peak %d / %d\n', i, length(idx0)), "FontSize", 20)
         hold off;
 
         fprintf('Peak #%d / %d\n', i, length(idx0)-i);
@@ -123,8 +128,8 @@ while i < length(idx0)
             
             % Find index of peak in datasmr summary array to mark the peak
             % for retention
-            tempidx = find(datasmr(:,14) == Peak.sectnum(i) & ...
-                datasmr(:,16) == Peak.peakorder(i));
+            tempidx = find(datasmr.segment_num == Peak.sectnum(i) & ...
+                datasmr.pk_order == Peak.peakorder(i));
             if tempidx == i
                 disp('Matches well!');
             end
@@ -132,6 +137,7 @@ while i < length(idx0)
             dataidx = [dataidx tempidx];
         elseif evaluate_fit == 'x' % Exit from the aligner routine
             exit_flag = 1;
+            manual_exit_flag = 1;
         elseif evaluate_fit == 'b' % Go to previous peak
             i = find(Peak.process(1:i-1) == 1, 1, 'last') - 1; 
             Peak.process(i+1) = 0;
@@ -152,7 +158,13 @@ while i < length(idx0)
     end
 end
 
+if manual_exit_flag
+    error('RuntimeError: Manual exit from manual peak curation')
+end
+
+close(fh);
+
 % Final processed datasmr summary array
-datasmr_processed = datasmr(dataidx,:);
+datasmr_processed = datasmr(dataidx, :);
 
 end

@@ -1,4 +1,4 @@
-function validate_params(run_params)
+function run_params = validate_params(run_params)
 % Validate input parameters into 
 % 
 % Arguments: 

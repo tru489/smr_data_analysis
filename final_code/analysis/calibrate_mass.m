@@ -5,43 +5,33 @@ function calibrate_mass(run_params)
 %   run_params (struct): running parameters for preprocessing code
 
 %% Load data files
-[freqfile, data_dir] = get_raw_file_handle('frequency');
-[timefile, ~] = get_raw_file_handle('time');
+file_selection.valve_state = 0;
+file_selection.mass_cal = 0;
+file_selection.dens_bl_cal = 0;
+file_selection.pmt_data = 0;
+file_selection.cc_data = 0;
+
+[parsed_files, data_dir, formatted_date] = parse_dir_contents(file_selection);
+
+freqfile = parsed_files.freq_id;
+timefile = parsed_files.smr_time_id;
 
 %% Add file to save processed data
 run_params.saving.save_abs_path = create_results_dir(run_params, data_dir);
 save_abs_path = run_params.saving.save_abs_path;
 
 %% Analyze frequency data to get peaks
-[processed_freq_data, pass_struct] = analyze_freq_data(run_params, ...
+[processed_freq_data, pass_struct, init_time] = analyze_freq_data(run_params, ...
     freqfile, timefile);
-summary_pks = processed_to_summary(processed_freq_data);
-
-% Close large raw data files
-fclose(freqfile);
-fclose(timefile);
+summary_pks = processed_to_summary(run_params, processed_freq_data, init_time);
 
 %% Manual peak curation and data saving
-samplepeak = pass_struct.samplepeak;
-sampletime = pass_struct.sampletime;
-sample_baseline_fits = pass_struct.sample_baseline_fits;
+curated = curation_handler(run_params, pass_struct, summary_pks, ...
+    save_abs_path, 'peakset_summary.csv', 0);
 
-if run_params.prefs.manual_curation
-    curated = manual_pk_curation(run_params, samplepeak, ...
-        sampletime, sample_baseline_fits, summary_pks);
-else
-    if run_params.curation.always_auto_reject
-        % Despite no manual curation, still auto-reject peaks
-        idx_discard = auto_discard_peaks(run_params.curation, summary_pks);
-        curated = summary_pks(idx_discard, :);
-    else
-        curated = summary_pks;
-    end
-end
-
-analyze_mass_cal(run_params, curated, save_abs_path)
+analyze_mass_cal(run_params, curated, save_abs_path, formatted_date)
 param_log(run_params, save_abs_path)
 disp_dir_link(run_params.saving.save_abs_path)
+fclose('all');
 
 end
-

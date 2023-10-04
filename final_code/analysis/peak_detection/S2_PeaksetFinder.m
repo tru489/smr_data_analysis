@@ -28,6 +28,12 @@ idx = find(abs(diff(ydata)) < diff_threshold);
 mf_ydata_thres = medfilt1(ydata(idx), med_filt_wd);
 idx_f = abs(ydata(idx) - mf_ydata_thres) < bs_dev_thres;
 idx = idx(idx_f);
+
+if run_params.backend.compensate_baseline_fluct
+    idx_in = ydata(idx) < 3000;
+    idx = idx(idx_in);
+end
+
 idx = [idx; length(ydata)];
 
 % If length of flat portion of baseline is insufficient
@@ -42,8 +48,17 @@ end
 ydata_thres = interp1(xdata(idx), ydata(idx), xdata);
 
 % Locally smooth ydata
-ydata = smooth(ydata, 3);
+if ~run_params.backend.alternative_smoothing
+    ydata = smooth(ydata, 3);
+else
+    ydata=smooth(ydata, 5);
+end
+
+if run_params.backend.fixed_peakset_thresh
+    offset_input = (max(ydata) - min(ydata)) * 0.5;
+end
 minpkht_thres = ydata_thres - offset_input;
+
 
 if ~analysismode
     hold off;
@@ -58,7 +73,7 @@ if ~analysismode
     
     % Plot min. peak height threshold
     subplot(2,2,3); plot(xdata, minpkht_thres, '-k');
-    input('Continue? ');
+    % input('Continue? ');
 end
 
 
@@ -109,6 +124,16 @@ while repeatflag
         end
         
         goflag = 0;
+
+        % Remove "false" peaks in noise caused by reversing flow, edit on 
+        % 01062021
+        if run_params.backend.compensate_baseline_fluct
+            if length(peaks) > 3  && peaks(4) - peaks(3) > 500
+                peaks=peaks(1:3);
+                goflag = 1;
+            end
+        end
+
         if mod(length(peaks), 3) ~= 0 
             disp(['Warning: the number of peaks found is not a multiple ' ...
                 'of three. Check plot.'])

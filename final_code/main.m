@@ -1,9 +1,21 @@
 close all;
 addpath(...
     genpath("params"), ...
-    genpath("analysis"))
+    genpath("analysis"), ...
+    genpath("scripts"), ...
+    genpath("visualization"), ...
+    genpath("data_dir_formatting"))
 
-run_params = set_run_params();
+% Choose whether to run parameters from those set in set_run_params, or to
+% those in a log file from previous analysis
+params_from_log = 0;
+
+%% Set run params
+if ~params_from_log
+    run_params = set_run_params();
+else
+    run_params = get_json_struct('run parameter');
+end
 
 %% Calibration types
 if run_params.analysis_type.mass_calibration
@@ -19,14 +31,14 @@ if run_params.analysis_type.mass
     analyze_mass(run_params)
 end
 
-% if run_params.analysis_type.fl_excl
-% 
-% end
-% 
-% if run_params.analysis_type.density_trap
-% 
-% end
-% 
-% if run_params.analysis_type.water_content
-% 
-% end
+if run_params.analysis_type.fl_excl
+    analyze_fl_excl(run_params)
+end
+
+if run_params.analysis_type.density_trap
+    analyze_density_trap(run_params)
+end
+
+if run_params.analysis_type.water_content
+    analyze_water_content(run_params)
+end

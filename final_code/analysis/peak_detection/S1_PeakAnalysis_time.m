@@ -1,10 +1,11 @@
-function [pk_data, pass_struct] = S1_PeakAnalysis_time(x, t, datalast, ...
-    sectionnumber, run_params, pass_struct)
+function [pk_data, pass_struct] = S1_PeakAnalysis_time(x, t, valve_state, ...
+    datalast, sectionnumber, run_params, pass_struct)
 % Analyzes an individual data segment of frequency-time data to find peaks
 %
 % Arguments:
 %   x (array(double)): frequency data array
 %   t (array(double)): time data array
+%   valve_state (array(double)): valve state data array
 %   datalast (array(double)): array of data from previous segment 
 %       iterations
 %   sectionnumber (array(double)): current segment number
@@ -30,14 +31,18 @@ estimated_datapoints = run_params.bl_select.estimated_datapoints;
 estimated_noise = run_params.bl_select.estimated_noise;
 sgolay_length_idx = run_params.bl_select.sgolay_length_idx;
 
-sgolay_length = 2 * round(sgolay_length_idx * ...
-    (estimated_datapoints / 400)) + 1;
-
-% Filter frequency data with savitsky-golay filter
-if sgolay_length > 3
-    ydata = sgolayfilt(x, 3, sgolay_length); 
+if run_params.backend.alternative_smoothing
+    ydata = sgolayfilt(sgolayfilt(x, 3, 7), 3, 7);
 else
-    ydata = sgolayfilt(x, 3, 5);
+    sgolay_length = 2 * round(sgolay_length_idx * ...
+        (estimated_datapoints / 400)) + 1;
+    
+    % Filter frequency data with savitsky-golay filter
+    if sgolay_length > 3
+        ydata = sgolayfilt(x, 3, sgolay_length); 
+    else
+        ydata = sgolayfilt(x, 3, 5);
+    end
 end
 
 xdata = (1:length(ydata))';
@@ -64,6 +69,11 @@ mf_ydata_thres = medfilt1(ydata(idx), med_filt_wd);
 
 idx_f = abs(ydata(idx) - mf_ydata_thres) < bs_dev_thres;
 idx = idx(idx_f);
+
+if run_params.backend.compensate_baseline_fluct
+    idx_in = ydata(idx) < 3000;
+    idx = idx(idx_in);
+end
 
 if isempty(idx)
     disp('Filtered baseline is empty; moving on to next segment');
@@ -97,11 +107,14 @@ if length(peak_idx) > 1
     set(gca,'YLim',[min(ydata) - 10 max(ydata) + 10]);
 else
     disp('size of peak_idx is smaller than 2')
+    pk_data = zeros(13,1); 
+    pass_struct.elapsed_time = pass_struct.elapsed_time + t(end);  
+    return;
 end
 
 disp('Beginning individual peak analysis.')
 
-% Lower threshold to half-length (in datapoints) of data segment \
+% Lower threshold to half-length (in datapoints) of data segment 
 % surrounding a single peak
 segment_threshold = run_params.bl_select.segment_threshold;
 segment_threshold = segment_threshold * estimated_datapoints / 400;
@@ -140,7 +153,7 @@ for i = 1:length(peak_idx)
         peaks = S2_PeaksetFinder(run_params, local_xdata, local_ydata, ...
             offset_input, baseparams);
         
-        if numel(peaks) == 3
+        if numel(peaks) ~= 0 % numel(peaks) == 3
             % Distances (idx) between first and last of three 2nd mode
             % peaks
             peakdist_temp = peaks(end) - peaks(1);
@@ -190,7 +203,7 @@ for i = 1:length(peak_idx)
                 fit_baseline = peak_fit_metrics.fit_baseline;
             
                 %% Input Experiment parameters
-                Experiment.R = 10000; % 32768
+                Experiment.R = 32768; % 32768
                 Experiment.decimation = 1;
                 Experiment.Fs = 100e6 / Experiment.R / ...
                     Experiment.decimation;
@@ -208,7 +221,7 @@ for i = 1:length(peak_idx)
                 % data for different peaks in the arrays
                 pass_struct.samplepeak = ...
                     [pass_struct.samplepeak temppeak' ...
-                    1e3 i sectionnumber]; 
+                    nan i sectionnumber]; 
                 pass_struct.sampletime = ...
                     [pass_struct.sampletime temptime ...
                     0 i sectionnumber];
@@ -401,7 +414,7 @@ end
 %   (10): Data segment number of peaks
 %   (11): Index of peak within 3 peaks for each peakset
 %   (12): Index of peak within all peaks detected for this segment
-%   (13): zeros
+%   (13): valve state
 
 if (~isempty(pk_t))
     pk_data(1,:) = pk_t + pass_struct.elapsed_time;
@@ -416,7 +429,7 @@ if (~isempty(pk_t))
     pk_data(10,:) = sectnum;
     pk_data(11,:) = pknum;
     pk_data(12,:) = pkorder;
-    pk_data(13,:) = 0;
+    pk_data(13,:) = valve_state(pkidx_poly);
 else
     disp('No acceptable peak found in this section');
     pk_data = zeros(13,1);

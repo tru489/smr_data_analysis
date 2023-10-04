@@ -3,7 +3,7 @@ addpath('..\..\analysis\helpers')
 
 %% User preferences
 % Specify slice of data to plot. Empty list implies plotting all data
-slice = 1e7:2e7;
+slice = [];
 
 %%
 

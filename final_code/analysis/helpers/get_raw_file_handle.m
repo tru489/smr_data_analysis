@@ -1,4 +1,4 @@
-function [f_handle, dir] = get_raw_file_handle(data_name)
+function [f_handle, dir, fname] = get_raw_file_handle(data_name)
 % Get the file handle/ID of a raw data binary file
 % 
 % Arguments:
@@ -14,5 +14,6 @@ if ind ~= 0
 else
     error("IOError: Binary file not selected")
 end
+fname = path;
 
 end

@@ -7,12 +7,14 @@ function base_freq_dens_cal(run_params)
 % Arguments:
 %   run_params (struct): running parameters for analysis
 
+chip_id = input('Input chip ID: ', 's');
+
 % Get calibration file
 disp("Getting density baseline calibration data...")
 [path, dir, ind] = uigetfile('../*.csv', ...
     "Select density baseline calibration file", ' ');
 if ind ~= 0
-    data_table = readtable([dir path]);
+    data_table = readtable(fullfile(dir, path));
 else
     error("IOError: CSV file not selected")
 end
@@ -61,11 +63,17 @@ xlabel('Solution Density (g/cm^3)', 'FontSize', 14)
 ylabel('Feedback Delay', 'FontSize', 14)
 saveas(delay_fh, fullfile(save_dir, 'dens_cal_delay.jpg'))
 
+% Get creation date of csv raw data file
+formatted_date = get_creation_date(fullfile(dir, path));
+
 % Write values to json for future use
-st.slope = num2str(b(2) * 1e6);
-st.intercept = num2str(b(1) * 1e6);
+st.chip_id = chip_id;
+st.date = formatted_date;
+st.slope = b(2) * 1e6;
+st.intercept = b(1) * 1e6;
 st.soln_names = soln_names;
-json_id = fopen(fullfile(save_dir, "dens_base_cal_params.json"), 'w');
+json_id = fopen(fullfile(save_dir, formatted_date + ...
+    "_density_baseline_calibration.json"), 'w');
 js_str = jsonencode(st, PrettyPrint=true);
 fprintf(json_id, js_str);
 fclose(json_id);

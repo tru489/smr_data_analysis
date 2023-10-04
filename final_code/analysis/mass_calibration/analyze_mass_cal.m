@@ -1,4 +1,4 @@
-function analyze_mass_cal(run_params, datasmr, save_dir)
+function analyze_mass_cal(run_params, datasmr, save_dir, formatted_date)
 % Analyzes peakset data summary from a run of magnetic beads to product
 % calibration information. Requires input of bead/carrier fluid data.
 % Produces filtered peakset summary (optional) and json with important
@@ -8,8 +8,9 @@ function analyze_mass_cal(run_params, datasmr, save_dir)
 %   run_params (struct): parameters necessary for running analysis
 %   datasmr (array(double)): peakset summary array 
 %   save_dir (str): dir in which to save json/filtered peakset summary
+%   formatted_date (str): formatted date string
 
-freqs = datasmr(:,3);
+freqs = datasmr.avg_pk_ht_hz;
 
 fprintf('\nReference calibration particles:\n');
 fprintf('    4 um --> 4.000 um\n');
@@ -36,13 +37,13 @@ while flag2
     plt_opt = input('Remove outliers in plot (y/n)? : ', 's');
     if lower(plt_opt) == 'y'
         fig1 = figure;
-        histogram(rmoutliers(freqs), 50)
+        histogram(rmoutliers(freqs), 100)
         xlabel('Frequency Difference (Hz)')
         ylabel('Count')
         flag2 = 0;
     elseif lower(plt_opt) == 'n'
         fig1 = figure;
-        histogram(freqs, 50)
+        histogram(freqs, 100)
         xlabel('Frequency Difference (Hz)')
         ylabel('Count')
         flag2 = 0;
@@ -50,6 +51,8 @@ while flag2
         fprintf('Invalid input.\n')
     end
 end
+
+input('Continue? (press enter)');
 
 fprintf('Select frequency gate for particles of interest...\n')
 fprintf('Select left boundary...\n')
@@ -65,6 +68,7 @@ histogram(freq_gated, 50)
 title('Gated frequency range')
 xlabel('Frequency Difference (Hz)')
 ylabel('Count')
+saveas(fig2, fullfile(save_dir, 'freq_gated.jpg'))
 
 bead_vol = 4/3 * pi * (diameter / 2)^3 * 10^-12; % cm^3
 density_diff = (density - fl_density) * 10^12; % pg/cm^3
@@ -73,32 +77,30 @@ avg_freq = mean(freq_gated);
 cal_factor = gt_mass / avg_freq; % pg/Hz
 cal_freqs = freq_gated * cal_factor;
 
-fprintf('\nGround truth particle buoyant mass: %f pg\n', gt_mass)
+fprintf('\n-------------------------------------------------------------')
+fprintf('Ground truth particle buoyant mass: %f pg\n', gt_mass)
 fprintf('Average frequency difference: %f Hz\n', avg_freq)
 
 fprintf('\nCalibration factor: %.4f pg/Hz\n', cal_factor)
 fprintf('Percent CV of mass: %.2f%%\n', ...
     100 * std(cal_freqs) / mean(cal_freqs))
 
-datasmr_pg_masses = [datasmr((freqs > x_left) & (freqs < x_right), :), ...
-    cal_freqs];
+datasmr_pg_masses = datasmr((datasmr.avg_pk_ht_hz > x_left) & (datasmr.avg_pk_ht_hz < x_right), :);
+datasmr_pg_masses.mass_pg = cal_freqs;
 
 if run_params.mass_cal.save_peak_summary
-    variable_names = {'peak_time_s', 'peak_time_m', 'avg_pk_ht_hz', ...
-        'avg_baseline', 'bl_slope', 'pk_ht1_hz', 'pk_ht2_hz', ...
-        'pk_ht3_hz', 'node_dev_1', 'node_dev_2', 'node_dev_mean', ...
-        'pk_fwhm', 'transit_t', 'segment_num', 'peak_time_h', ...
-        'pk_order', 'mass_pg'};
-    summary_pks_table = array2table(datasmr_pg_masses, ...
-        'VariableNames', variable_names);
-    writetable(summary_pks_table, fullfile(save_dir, "peak_data.csv"))
+    writetable(datasmr_pg_masses, fullfile(save_dir, "peakset_summary.csv"))
 end
 
 st.ground_truth_mass_pg = gt_mass;
+st.bead_diameter_um = diameter;
 st.avg_freq_hz = avg_freq;
+st.date = formatted_date;
 st.cal_factor_pg_per_hz = cal_factor;
 st.cv_mass = std(cal_freqs) / mean(cal_freqs);
-jsonID = fopen(fullfile(save_dir, "calibration_params.json"), 'w');
+jsonID = fopen(...
+    fullfile(save_dir, formatted_date + "_" + num2str(round(diameter)) + ...
+    "um_mass_calibration.json"), 'w');
 js_str = jsonencode(st, PrettyPrint=true);
 fprintf(jsonID, js_str);
 fclose(jsonID);

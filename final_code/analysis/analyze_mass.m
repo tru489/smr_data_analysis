@@ -1,59 +1,51 @@
 function analyze_mass(run_params)
-% Processing of binary files for SMR mass measurements
+% Processing/analysis of binary files for SMR mass measurements
 % 
 % Arguments:
 %   run_params (struct): running parameters for preprocessing code
 
 %% Load data files
-[freqfile, data_dir] = get_raw_file_handle('frequency');
-[timefile, ~] = get_raw_file_handle('time');
-cal_params = get_json_struct('mass calibration parameters');
+file_selection.valve_state = 0;
+file_selection.mass_cal = 1;
+file_selection.dens_bl_cal = 0;
+file_selection.pmt_data = 0;
+file_selection.cc_data = 0;
+
+[parsed_files, data_dir, formatted_date] = parse_dir_contents(file_selection);
+
+freqfile = parsed_files.freq_id;
+timefile = parsed_files.smr_time_id;
+mass_cal_params = parsed_files.mass_cal;
 
 %% Add file to save processed data
 run_params.saving.save_abs_path = create_results_dir(run_params, data_dir);
 save_abs_path = run_params.saving.save_abs_path;
 
 %% Analyze frequency data to get peaks
-[processed_freq_data, pass_struct] = analyze_freq_data(run_params, ...
+[processed_freq_data, pass_struct, init_time] = analyze_freq_data(run_params, ...
     freqfile, timefile);
-summary_pks = processed_to_summary(processed_freq_data);
-
-% Add calibrated mass data to peakset summary
-summary_pks = [summary_pks, ...
-    summary_pks(:,3) * cal_params.cal_factor_pg_per_hz];
-
-% Close large raw data files
-fclose(freqfile);
-fclose(timefile);
+summary_pks = processed_to_summary(run_params, processed_freq_data, init_time, ...
+    mass_cal_params.cal_factor_pg_per_hz);
 
 %% Manual peak curation and data saving
-samplepeak = pass_struct.samplepeak;
-sampletime = pass_struct.sampletime;
-sample_baseline_fits = pass_struct.sample_baseline_fits;
+path_list = regexp(data_dir, filesep, 'split');
+curated = curation_handler(run_params, pass_struct, summary_pks, ...
+    save_abs_path, strcat(path_list{end-1}, '_', path_list{end}, '.csv'), 1);
 
-if run_params.prefs.manual_curation
-    curated = manual_pk_curation(run_params, samplepeak, ...
-        sampletime, sample_baseline_fits, summary_pks);
-else
-    if run_params.curation.always_auto_reject
-        % Despite no manual curation, still auto-reject peaks
-        idx_discard = auto_discard_peaks(run_params.curation, summary_pks);
-        curated = summary_pks(idx_discard, :);
-    else
-        curated = summary_pks;
-    end
-end
+stats_cell = get_mass_stats(run_params, summary_pks, curated, ...
+    mass_cal_params.cal_factor_pg_per_hz);
+fig_path_cell = plot_mass_results(run_params, curated);
 
-variable_names = {'peak_time_s', 'peak_time_m', 'avg_pk_ht_hz', ...
-    'avg_baseline', 'bl_slope', 'pk_ht1_hz', 'pk_ht2_hz', ...
-    'pk_ht3_hz', 'node_dev_1', 'node_dev_2', 'node_dev_mean', ...
-    'pk_fwhm', 'transit_t', 'segment_num', 'peak_time_h', ...
-    'pk_order', 'mass_pg'};
-summary_pks_table = array2table(curated, ...
-    'VariableNames', variable_names);
-writetable(summary_pks_table, fullfile(save_abs_path, 'peak_data.csv'))
+analysis_name = get_analysis_type(run_params);
+presentation_title = string(formatted_date) + " " + string(analysis_name);
+ppt_filename = string(formatted_date) + string(analysis_name) + "_figures";
+gen_fig_ppt(run_params, stats_cell, fig_path_cell, ppt_filename, ...
+    presentation_title, save_abs_path)
 
 disp_dir_link(run_params.saving.save_abs_path)
-param_log(run_params, save_dir)
+param_log(run_params, run_params.saving.save_abs_path)
+
+% Close large raw data files
+fclose('all');
 
 end

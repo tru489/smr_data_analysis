@@ -53,14 +53,25 @@ end
 
 % Provide a linear fit of the baseline for this peakset and subtract away
 % from frequency
-linbaseline = polyfit(xbasedata, ybasedata, 1);
-baselineslope = linbaseline(1);
-baselinefreq = (polyval(linbaseline, xdata))';
+
+if run_params.backend.quad_baseline
+    baseline_fit = polyfit(xbasedata, ybasedata, 2);
+else
+    baseline_fit = polyfit(xbasedata, ybasedata, 1);
+end
+
+baselineslope = baseline_fit(1);
+baselinefreq = (polyval(baseline_fit, xdata))';
 freqdata = ydata' - baselinefreq; 
 
 % Baseline frequency data corrected for baseline regression
 freqbasedata = ybasedata - baselinefreq(xbasedata);
-freqsmth = sgolayfilt(freqdata, 3, 11);
+
+if run_params.backend.alternative_smoothing
+    freqsmth = sgolayfilt(freqdata, 3, 21);
+else
+    freqsmth = sgolayfilt(freqdata, 3, 11);
+end
 
 if dispprogress
     figure(1);
@@ -152,18 +163,25 @@ for i = 1:length(antipeaks)
     antipk_fit_segx = antipk_fit_segx';
     antipk_fit_segy = freqdata(antipk_fit_segx);
     
-    % Perform quarternary polynomial fit to fit antipeaks
-    polyantipkeq = polyfit((-pk_fit_wd:pk_fit_wd), antipk_fit_segy, 4);
-
-    % Evaluate peak fit
-    antipeakfit = polyval(polyantipkeq, -pk_fit_wd:pk_fit_wd);
-
-     % Find peak min value and location
-    [apky, apkx] = max(antipeakfit);
-
-    % Adjust the position of peak apex
-    apkidx_poly(i) = xdata(antipeaks(i)) - pk_fit_wd + apkx - 1;
-    apkht_poly(i) = apky;
+    if run_params.backend.antipeak_polyfit
+        % Perform quarternary polynomial fit to fit antipeaks
+        polyantipkeq = polyfit((-pk_fit_wd:pk_fit_wd), antipk_fit_segy, 4);
+    
+        % Evaluate peak fit
+        antipeakfit = polyval(polyantipkeq, -pk_fit_wd:pk_fit_wd);
+    
+         % Find peak min value and location
+        [apky, apkx] = max(antipeakfit);
+    
+        % Adjust the position of peak apex
+        apkidx_poly(i) = xdata(antipeaks(i)) - pk_fit_wd + apkx - 1;
+        apkht_poly(i) = apky;
+    else
+        antipeakfit = freqsmth(antipk_fit_segx);
+        [apky, apkx] = max(antipeakfit);
+        apkidx_poly(i) = xdata(antipeaks(i)) - pk_fit_wd + apkx - 1;
+        apkht_poly(i) = apky; 
+    end
 
     if dispprogress
         % Plot frequency data
