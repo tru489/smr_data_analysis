@@ -6,8 +6,7 @@ function generate_smr_signal(...
     ...
     cell_dry_density_gcm3, cell_dry_volume_fl, cell_total_volume_fl, ...
     ...
-    fwd_pkfit_a, fwd_pkfit_b, fwd_pkfit_c, back_pkfit_a, back_pkfit_b, ...
-    back_pkfit_c, ...
+    fwd_pkfit_params, back_pkfit_params, ... % Each row is a parameter, columns are candidate values
     ...
     dir_path)
 
@@ -124,22 +123,29 @@ for j = 1:n_traps
     %% Select stochastic parameters
     % Parameters set to a single value in an array will just use that
     % single value
+    % Peak placement/property parameters
     fwd_pk_arrival_frac = fwd_pk_arrival_frac(randsample(length(fwd_pk_arrival_frac), 1, true));
     fwd_pk_width = fwd_pk_width(randsample(length(fwd_pk_width), 1, true));
     back_pk_arrival_frac = back_pk_arrival_frac(randsample(length(back_pk_arrival_frac), 1, true));
     back_pk_width = back_pk_width(randsample(length(back_pk_width), 1, true));
-
+    
+    % Cell biophysical parameters
     cell_dry_density_gcm3 = cell_dry_density_gcm3(randsample(length(cell_dry_density_gcm3), 1, true));
     cell_dry_volume_fl = cell_dry_volume_fl(randsample(length(cell_dry_volume_fl), 1, true));
     cell_total_volume_fl = cell_total_volume_fl(randsample(length(cell_total_volume_fl), 1, true));
 
-    fwd_pkfit_a = fwd_pkfit_a(randsample(length(fwd_pkfit_a), 1, true));
-    fwd_pkfit_b = fwd_pkfit_b(randsample(length(fwd_pkfit_b), 1, true));
-    fwd_pkfit_c = fwd_pkfit_c(randsample(length(fwd_pkfit_c), 1, true));
+    % Forward baseline fitting parameters
+    fwd_pkfit_chosen = zeros(size(fwd_pkfit_params, 1), 1);
+    for i = 1:size(fwd_pkfit_params, 1)
+        param_arr = fwd_pkfit_params(i, :);
+        fwd_pkfit_chosen(i) = param_arr(randsample(length(param_arr), 1, true));
+    end
     
-    back_pkfit_a = back_pkfit_a(randsample(length(back_pkfit_a), 1, true));
-    back_pkfit_b = back_pkfit_b(randsample(length(back_pkfit_b), 1, true));
-    back_pkfit_c = back_pkfit_c(randsample(length(back_pkfit_c), 1, true));
+    back_pkfit_chosen = zeros(size(back_pkfit_params, 1), 1);
+    for i = 1:size(back_pkfit_params, 1)
+        param_arr = back_pkfit_params(i, :);
+        back_pkfit_chosen(i) = param_arr(randsample(length(param_arr), 1, true));
+    end
 
     % Append to feature lists
     fwd_bl_fit_abc(j, :) = [fwd_pkfit_a, fwd_pkfit_b, fwd_pkfit_c];
@@ -179,7 +185,10 @@ for j = 1:n_traps
     % Add in baseline curvature
     seg_win_curv = freq(fwd_start_idx:fwd_start_idx + fwd_datapoints - 1);
     curv_idx = 0:fwd_datapoints - 1;
-    bl_curv = fwd_pkfit_a * curv_idx.^2 + fwd_pkfit_b * curv_idx + fwd_pkfit_c;
+    
+    fwd_a = back_pkfit_chosen(1); fwd_b = back_pkfit_chosen(2); 
+    fwd_c = back_pkfit_chosen(3); fwd_d = back_pkfit_chosen(4);
+    bl_curv = fwd_a * curv_idx.^3 + fwd_b * curv_idx.^2 + fwd_c * curv_idx + fwd_d;
     seg_win_curv = seg_win_curv + bl_curv;
     freq(fwd_start_idx:fwd_start_idx + fwd_datapoints - 1) = ...
         seg_win_curv;
@@ -222,7 +231,11 @@ for j = 1:n_traps
     % Add in baseline curvature
     seg_win_curv = freq(back_start_idx:back_start_idx + back_datapoints - 1);
     curv_idx = 0:back_datapoints - 1;
-    bl_curv = back_pkfit_a * curv_idx.^2 + back_pkfit_b * curv_idx + back_pkfit_c;
+
+    back_a = back_pkfit_chosen(1); back_b = back_pkfit_chosen(2); 
+    back_c = back_pkfit_chosen(3); back_d = back_pkfit_chosen(4);
+    bl_curv = back_a * curv_idx.^3 + back_b * curv_idx.^2 + back_c * curv_idx + back_d;
+    
     seg_win_curv = seg_win_curv + bl_curv;
     freq(back_start_idx:back_start_idx + back_datapoints - 1) = ...
         seg_win_curv;

@@ -20,7 +20,7 @@ file_selection.cc_data = 1;
 
 freqfile = parsed_files.freq_id;
 timefile = parsed_files.smr_time_id;
-vsfile = parsed_files.vs_id;
+vsfile = parsed_files.vs_id;    
 mass_cal_params = parsed_files.mass_cal;
 bl_dens_cal_params = parsed_files.dens_bl_cal;
 pmt_file_id = parsed_files.pmt_channels_id;
