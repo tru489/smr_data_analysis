@@ -114,10 +114,14 @@ writetable(paired_datasmr, fullfile(save_abs_path, 'peakset_summary_paired.csv')
 disp('Creating powerpoint...')
 fig_path_cell = plot_dens_trap_results(run_params, paired_datasmr);
 
+stats_cell = get_dens_trap_stats(run_params, ...
+    paired_datasmr, mass_cal_params.cal_factor_pg_per_hz, ...
+    curated, vsfile);
+
 analysis_name = get_analysis_type(run_params);
 presentation_title = string(formatted_date) + " " + string(analysis_name);
 ppt_filename = string(formatted_date) + string(analysis_name) + "_figures";
-gen_fig_ppt(run_params, fig_path_cell, ppt_filename, presentation_title, ...
+gen_fig_ppt(run_params, stats_cell, fig_path_cell, ppt_filename, presentation_title, ...
     save_abs_path)
 
 disp_dir_link(run_params.saving.save_abs_path)

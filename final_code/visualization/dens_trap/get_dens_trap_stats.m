@@ -1,8 +1,6 @@
-function stats_cell = get_water_content_stats(run_params, ...
-    full_summary, paired_datasmr, mass_cal_factor, vol_cal_factor, ...
-    detected_smr_peaks, output_pmt_table, vsfile)
-% Generates cell array of important summary stats from water content
-% analysis
+function stats_cell = get_dens_trap_stats(run_params, ...
+    paired_datasmr, mass_cal_factor, ...
+    detected_smr_peaks, vsfile)
 
 dt = run_params.density_trap;
 
@@ -11,11 +9,6 @@ stats_cell = {}; i = 1;
 % Mass calibration factor (smr calibration)
 stats_cell{i} = ...
     strcat("Mass calibration factor: ", num2str(mass_cal_factor), " pg/Hz");
-i = i + 1;
-
-% Volume calibration factor (from coulter counter + pmt calibration)
-stats_cell{i} = ...
-    strcat("Volume calibration factor: ", num2str(vol_cal_factor), " fl/au");
 i = i + 1;
 
 % Forward/back peak detection
@@ -54,19 +47,6 @@ i = i + 1;
 
 stats_cell{i} = ...
     strcat("Number of forward and back peaks paired: ", height(paired_datasmr));
-i = i + 1;
-
-stats_cell{i} = ...
-    strcat("Number of PMT peaks: ", height(output_pmt_table));
-i = i + 1;
-
-stats_cell{i} = ...
-    sprintf("Pair rate of paired SMR data with PMT peaks: %0.3f%%", ...
-    height(full_summary) / height(paired_datasmr));
-i = i + 1;
-
-stats_cell{i} = ...
-    strcat("Number of paired final peaks: ", height(full_summary));
 i = i + 1;
 
 end
