@@ -55,7 +55,7 @@ else
 end
 
 if run_params.backend.fixed_peakset_thresh
-    offset_input = (max(ydata) - min(ydata)) * 0.5;
+    offset_input = (max(ydata) - min(ydata)) * 0.3;
 end
 minpkht_thres = ydata_thres - offset_input;
 

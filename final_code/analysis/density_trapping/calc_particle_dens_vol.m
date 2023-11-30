@@ -16,11 +16,11 @@ function paired_dv = ...
 %   paired_dv (table): paired data containing single-cell density and
 %       volume information
 
-bl1_avg = pair_data.fl1_bl_avg_hz;
+bl1_avg = paired_data.fl1_bl_avg_hz;
 paired_data.fl1_bl_dens_gcm3 = (fl1_ref_freq - bl1_avg - intercept) / slope; 
 bl1_density = paired_data.fl1_bl_dens_gcm3;
 
-bl2_avg = pair_data.fl2_bl_avg_hz;
+bl2_avg = paired_data.fl2_bl_avg_hz;
 paired_data.fl2_bl_dens_gcm3 = (fl2_ref_freq - bl2_avg - intercept) / slope; 
 bl2_density = paired_data.fl2_bl_dens_gcm3;
 

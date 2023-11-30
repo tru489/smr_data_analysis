@@ -65,6 +65,10 @@ while(1)
         init_time = time(1);
     end
 
+    if numel(freq) == 0 || numel(time) == 0
+        break
+    end
+
     if ~isnan(vsfile)
         % Flip to the next valve state data segment piece 8*datasize bytes ahead
         fseek(vsfile, i * datasize, 'bof'); % datatype int is 8bytes

@@ -133,8 +133,9 @@ for i = 1:size(idx_arr, 1)
     stdev_arr(i) = std(noise);
     
     % Use discrete wavelet analysis to calculate estimated alpha factor of noise
+    % (from PSD)
     [dh, hb, cp] = dwtleader(noise);
-    alpha_arr(i) = -2*cp(1)-1;
+    alpha_arr(i) = -2 * cp(1) - 1;
 end
 
 disp('Average and std of std(noise):')

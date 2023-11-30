@@ -32,6 +32,9 @@ if dens_gate(1) > dens_gate(2)
 end
 close(dens_fig)
 
+volume_fl = paired_data.volume_fl;
+density_gcm3 = paired_data.density_gcm3;
+
 gated_vol = volume_fl > vol_gate(1) & volume_fl < vol_gate(2);
 gated_dens = density_gcm3 > dens_gate(1) & density_gcm3 < dens_gate(2);
 paired_data = paired_data(gated_vol & gated_dens, :);

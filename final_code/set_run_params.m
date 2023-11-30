@@ -14,15 +14,15 @@ run_params.analysis_type.mass_calibration = 0;
 run_params.analysis_type.base_freq_density_calibration = 0;
 % Performs empirical correction of density baseline calibration using
 % mixture of different sizes of beads
-run_params.analysis_type.dens_trap_base_freq_recal = 1;
+run_params.analysis_type.dens_trap_base_freq_recal = 0;
 
 % --------------------------- Analysis types ---------------------------
 % Calculates mass measurements from freq/time data
-run_params.analysis_type.mass = 0;
+run_params.analysis_type.mass = 1;
 % Calculates mass/volume from freq/time/fluorescence data
 run_params.analysis_type.fl_excl = 0;
 % Calculates density/volume from density trapping data
-run_params.analysis_type.density_trap = 1;
+run_params.analysis_type.density_trap = 0;
 % Calculates water content from density trapping with D2O (i.e. freq in two
 % fluids/time/fluorescence data)
 run_params.analysis_type.water_content = 0;

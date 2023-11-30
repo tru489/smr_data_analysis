@@ -13,14 +13,23 @@ arguments
     pkset_summ = NaN
 end
 
-si = run_params.pkset_summ_idx;
-
 if isnan(pkset_summ)
     %% ------------------------- ANALYZE SMR SIGNAL -------------------------
     % Load data files
-    [freqfile, data_dir] = get_raw_file_handle('frequency');
-    [timefile, ~] = get_raw_file_handle('time');
-    cal_params = get_json_struct('mass calibration parameters');
+    file_selection.valve_state = 1;
+    file_selection.mass_cal = 1;
+    file_selection.dens_bl_cal = 0;
+    file_selection.pmt_data = 1;
+    file_selection.cc_data = 1;
+    
+    [parsed_files, data_dir, formatted_date] = parse_dir_contents(file_selection);
+    
+    freqfile = parsed_files.freq_id;
+    timefile = parsed_files.smr_time_id;
+    cal_params = parsed_files.mass_cal;
+    coulter_data = parsed_files.cc_data;
+    pmt_file_id = parsed_files.pmt_channels_id;
+    pmt_timefile = parsed_files.pmt_time_id;
     
     %% Add file to save processed data
     run_params.saving.save_abs_path = create_results_dir(run_params, data_dir);
@@ -32,10 +41,6 @@ if isnan(pkset_summ)
     summary_pks = processed_to_summary(run_params, processed_freq_data, ...
         init_time, cal_params.cal_factor_pg_per_hz);
     
-    % Close large raw data files
-    fclose(freqfile);
-    fclose(timefile);
-    
     %% Manual peak curation and data saving 
     curated = curation_handler(run_params, pass_struct, summary_pks, ...
         save_abs_path, 'peak_data.csv', run_params.fl_excl.save_peakset_summ);
@@ -45,30 +50,60 @@ end
 
 %% ------------------------- ANALYZE PMT SIGNAL -------------------------
 % Load data files
-pmt_file_id = get_pmt_file_handles(run_params);
-[pmt_timefile, ~] = get_raw_file_handle('time');
-
+% pmt_file_id = get_pmt_file_handles(run_params);
+% [pmt_timefile, ~] = get_raw_file_handle('time');
 
 [output_pmt_table, param_table] = analyze_pmt_data(run_params, ...
     pmt_file_id, pmt_timefile, save_abs_path);
 
 % Reformat SMR file to be compatible with readout pairing
 variable_names = {'real_time_sec', 'buoyant_mass_pg', 'node_deviation_hz'};
-smr_table = array2table(...
-    curated(:, [si.real_time_s, si.mass_pg, si.node_dev_mean]), ...
-    'VariableNames', variable_names);
+smr_table = array2table([curated.real_time_s, curated.mass_pg, ...
+    curated.node_dev_mean], 'VariableNames', variable_names);
 
 [pairing_stats, readout_paired, paired_smr_ind] = ...
     readout_pairing(run_params, smr_table, output_pmt_table, param_table, ...
     save_abs_path);
 
-Coulter_data = get_coulter_data();
-vol_cal_fl_per_au = coulter_counter_calibration(run_params, Coulter_data, ...
+[vol_cal_fl_per_au, cc_hist_bin_edges, cc_hist_bin_counts] = ...
+    coulter_counter_calibration(run_params, coulter_data, ...
     readout_paired);
+
+total_vols_fl = readout_paired.vol_au * vol_cal_fl_per_au;
+[~, idx_smr, idx_pmt] = intersect(curated.real_time_s, ...
+    readout_paired.real_time_sec, 'stable');
+
+total_vols_table = array2table([readout_paired.vol_au, total_vols_fl], ...
+    'VariableNames', {'total_volume_au', 'total_volume_fl'});
+full_summary = [curated(idx_smr, :), total_vols_table(idx_pmt, :)];
+full_summary.total_density_gcm3 = full_summary.mass_pg ./ full_summary.total_volume_fl;
+
+path_list = regexp(data_dir, filesep, 'split');
+writetable(full_summary, fullfile(save_abs_path, strcat(path_list{end-1}, '_', path_list{end}, '.csv')))
+
+
+fig_path_cell = plot_fl_excl_results(run_params, full_summary);
+
+
+stats_cell = get_fl_excl_stats(run_params, ...
+    full_summary, summary_pks, cal_params.cal_factor_pg_per_hz, vol_cal_fl_per_au, ...
+    output_pmt_table, curated);
+
+analysis_name = get_analysis_type(run_params);
+presentation_title = string(formatted_date) + " " + string(analysis_name);
+ppt_filename = string(formatted_date) + string(analysis_name) + "_figures";
+gen_fig_ppt(run_params, stats_cell, fig_path_cell, ppt_filename, presentation_title, ...
+    save_abs_path)
+
+
+
+
+
 
 disp_dir_link(run_params.saving.save_abs_path)
 param_log(run_params, run_params.saving.save_abs_path)
 
-
+% Close large raw data files
+fclose('all');
 
 end

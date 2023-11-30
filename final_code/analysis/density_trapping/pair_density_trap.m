@@ -165,6 +165,9 @@ fl2_bl_avg_hz = array2table(bl2_avg, 'VariableNames', {'fl2_bl_avg_hz'});
 paired_data = [fl1_pair_summ, fl1_bl_avg_hz, fl2_pair_summ, ...
     fl2_bl_avg_hz];
 
+intercept = bl_dens_cal_params.intercept;
+slope = bl_dens_cal_params.slope;
+mass_cal_factor = cal_params.cal_factor_pg_per_hz;
 if ~run_params.analysis_type.dens_trap_base_freq_recal
     paired_data = ...
         calc_particle_dens_vol(paired_data, fl1_ref_freq, fl2_ref_freq, ...

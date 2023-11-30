@@ -106,6 +106,7 @@ else
         fluid1_pk_direct, fluid2_datasmr, fluid2_pk_direct, cal_params, ...
         bl_dens_cal_params, run_params.density_trap.fl1_ref_freq, ...
         run_params.density_trap.fl2_ref_freq);
+    curated = [curated_fluid1; curated_fluid2];
 end
 
 writetable(paired_datasmr, fullfile(save_abs_path, 'peakset_summary_paired.csv'))
@@ -115,7 +116,7 @@ disp('Creating powerpoint...')
 fig_path_cell = plot_dens_trap_results(run_params, paired_datasmr);
 
 stats_cell = get_dens_trap_stats(run_params, ...
-    paired_datasmr, mass_cal_params.cal_factor_pg_per_hz, ...
+    paired_datasmr, cal_params.cal_factor_pg_per_hz, ...
     curated, vsfile);
 
 analysis_name = get_analysis_type(run_params);

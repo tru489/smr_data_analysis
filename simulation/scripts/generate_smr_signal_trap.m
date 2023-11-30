@@ -1,4 +1,4 @@
-function generate_smr_signal(...
+function generate_smr_signal_trap(...
     noise_level, alpha_factor, ...
     ...
     n_traps, fwd_pk_arrival_frac, fwd_search_time, fwd_pk_width, ...
@@ -8,9 +8,14 @@ function generate_smr_signal(...
     ...
     fwd_pkfit_params, back_pkfit_params, ... % Each row is a parameter, columns are candidate values
     ...
+    fwd_fluid_dens_kgm3, fwd_fluid_dyn_visc_pas, ...
+    back_fluid_dens_kgm3, back_fluid_dyn_visc_pas, ...
+    ...
     dir_path)
 
 %% Define SMR system-specific parameters (do not change)
+disp('Defining SMR and simulation parameters...')
+
 CIC = 10000;    % CIC rate
 Fs = 10^8/CIC;  % sampling rate
 rng(1);         % define random number generator (fixed value, yields same stochastic numbers)
@@ -18,11 +23,11 @@ rng(1);         % define random number generator (fixed value, yields same stoch
 %% Define physical cantilever properties (do not change)
 % Channel height and volume (hollow section of channel; um3)
 h_channel_um = 20; % um
-v_channel = h_channel_um * (((45 * 415) + (5 * 20) + 0.5 * pi * 20^2) - (5 * 415 + 0.5 * pi * 2.5^2));
-l_cantilever = 415 + 20; % um
+v_channel = h_channel_um * (((45 * 365) + (5 * 20) + 0.5 * pi * 20^2) - (5 * 365 + 0.5 * pi * 2.5^2));
+l_cantilever = 385; % um
 
 % Cantilever footprint area (um2)
-a_footprint = 0;
+a_footprint = 391 * 57;
 
 % Cantilever silicon volume (um3)
 v_silicon = (20 + 2 * 2) * a_footprint - v_channel;
@@ -32,27 +37,15 @@ dens_silicon = 7850; % kg/m^3
 m_cantilever = v_silicon * dens_silicon * 1e-18; % kg
 
 % SMR calibration factor (pg/Hz)
-mass_cal_factor = 0.8;
+mass_cal_factor = 0.7;
 mass_cal_cv = 0.01;
 
 % Effective mass fraction (for single-clamped cantilever; from theory)
 m_eff_fraction = 0.25;
 
-%% Define fluid properties
-% Water density and dynamic viscosity
-pbs_1x_density = 1000; % kg/m3
-fwd_fluid_dens_kgm3 = pbs_1x_density; % kg/m3; value for PBS
-fwd_fluid_dyn_visc_pas = 8.891*10^-4; % Pa*s; value for PBS
-
-% Heavy water density and dynamic viscosity
-pbs_10x_density = 1100; % kg/m3
-d2o_density = 1104.481; % kg/m3
-back_fluid_dens_kgm3 = pbs_10x_density * 0.1 + d2o_density * 0.9; % kg/m3; value for 90% D2O-PBS
-back_fluid_dyn_visc_pas = 8.891*10^-4; % Pa*s; value for 100% D2O
-
 %% Baseline SMR frequency values 
 fwd_baseline_freq = 1.6e6; % Hz
-back_baseline_freq = 1.45e6; % Hz
+back_baseline_freq = 1.6e6; % Hz
 
 %% Define peak/segment duration parameters
 % Generate indices of final frequency array
@@ -61,11 +54,11 @@ back_datapoints = back_search_time * Fs;
 total_datapoints = (fwd_datapoints + back_datapoints) * n_traps;
 total_time = (fwd_search_time + back_search_time) * n_traps;
 fwd_idx_start_datapoints = 1 + (0:n_traps - 1) * (fwd_datapoints + back_datapoints);
-back_idx_start_datapoints = fwd_idx_start_datapoints + back_datapoints;
+back_idx_start_datapoints = fwd_idx_start_datapoints + fwd_datapoints;
 
 % Freq, valve state, time arrays
 t_offset = 2082844800; % seconds between 01-01-1904 and 01-01-1904 00:00:00 UTC
-t_start = convertTo(datetime('now'),'posixtime') + t_offset;
+t_start = convertTo(datetime('now'), 'posixtime') + t_offset;
 freq = zeros(total_datapoints, 1);
 time = t_start + (0:total_datapoints - 1) * 1/Fs;
 
@@ -76,10 +69,20 @@ for i = 1:length(fwd_idx_start_datapoints)
     fwd_start_temp = fwd_idx_start_datapoints(i);
     back_start_temp = back_idx_start_datapoints(i);
     valve_state(fwd_start_temp:back_start_temp - 1) = fwd_vstate;
-    valve_state(back_start_temp:fwd_idx_start_datapoints(i+1)) = back_vstate;
+    if i == length(fwd_idx_start_datapoints)
+        valve_state(back_start_temp:end) = back_vstate;
+    else
+        valve_state(back_start_temp:fwd_idx_start_datapoints(i+1)) = back_vstate;
+    end
 end
 
 %% Cell biophysical properties
+% Stochastic selection of parameters
+% Cell biophysical parameters
+cell_dry_density_kgm3 = cell_dry_density_gcm3(randsample(length(cell_dry_density_gcm3), 1, true)) * 1000;
+cell_dry_volume_fl = cell_dry_volume_fl(randsample(length(cell_dry_volume_fl), 1, true));
+cell_total_volume_fl = cell_total_volume_fl(randsample(length(cell_total_volume_fl), 1, true));
+
 fl_to_m3 = 1e-18; % fl/m3
 
 rel_water_content = (cell_total_volume_fl - cell_dry_volume_fl) / cell_total_volume_fl;
@@ -102,8 +105,8 @@ noise_term = Colornoise_2()' / std(Colornoise_2()') * noise_level;
 % - Arrival fractions (% transit through total segment length; fwd, back)
 % - Peak widths (in datapoints; fwd, back)
 
-fwd_bl_fit_abc = zeros(n_traps, 3);
-back_bl_fit_abc = zeros(n_traps, 3);
+fwd_bl_fit_abc = zeros(n_traps, size(fwd_pkfit_params, 1));
+back_bl_fit_abc = zeros(n_traps, size(back_pkfit_params, 1));
 local_curv_fwd_back = zeros(n_traps, 2);
 buoy_mass_fwd_back = zeros(n_traps, 2);
 dry_mass_arr = zeros(n_traps, 1);
@@ -114,6 +117,7 @@ arrival_frac_fwd_back = zeros(n_traps, 2);
 pk_width_fwd_back = zeros(n_traps, 2);
 
 for j = 1:n_traps
+    fprintf('Simulating particle trap %d of %d...\n', j, n_traps)
     fwd_start_idx = fwd_idx_start_datapoints(j);
     back_start_idx = back_idx_start_datapoints(j);
     
@@ -128,11 +132,6 @@ for j = 1:n_traps
     fwd_pk_width = fwd_pk_width(randsample(length(fwd_pk_width), 1, true));
     back_pk_arrival_frac = back_pk_arrival_frac(randsample(length(back_pk_arrival_frac), 1, true));
     back_pk_width = back_pk_width(randsample(length(back_pk_width), 1, true));
-    
-    % Cell biophysical parameters
-    cell_dry_density_gcm3 = cell_dry_density_gcm3(randsample(length(cell_dry_density_gcm3), 1, true));
-    cell_dry_volume_fl = cell_dry_volume_fl(randsample(length(cell_dry_volume_fl), 1, true));
-    cell_total_volume_fl = cell_total_volume_fl(randsample(length(cell_total_volume_fl), 1, true));
 
     % Forward baseline fitting parameters
     fwd_pkfit_chosen = zeros(size(fwd_pkfit_params, 1), 1);
@@ -148,12 +147,12 @@ for j = 1:n_traps
     end
 
     % Append to feature lists
-    fwd_bl_fit_abc(j, :) = [fwd_pkfit_a, fwd_pkfit_b, fwd_pkfit_c];
-    back_bl_fit_abc(j, :) = [back_pkfit_a, back_pkfit_b, back_pkfit_c];
+    fwd_bl_fit_abc(j, :) = fwd_pkfit_chosen;
+    back_bl_fit_abc(j, :) = back_pkfit_chosen;
 
     %% Simulate forward signal
     % Relevant biophysical properties
-    cell_total_density_kgm3 = cell_dry_density_gcm3 * (1 - rel_water_content) + fwd_fluid_dens_kgm3 * rel_water_content;
+    cell_total_density_kgm3 = cell_dry_density_kgm3 * (1 - rel_water_content) + fwd_fluid_dens_kgm3 * rel_water_content;
     fwd_buoy_mass_kg = (cell_total_density_kgm3 - fwd_fluid_dens_kgm3) * cell_total_volume_fl * fl_to_m3;
     kg_to_pg = 1e15;
     fwd_buoy_mass_pg = fwd_buoy_mass_kg * kg_to_pg;
@@ -167,18 +166,24 @@ for j = 1:n_traps
 
     % Peak trace given particle buoyant mass
     Df_disp = -0.5 * ab * u.^2 * fwd_buoy_mass_kg / m_eff_theoretical_kg * fwd_baseline_freq;
+    
+    % Adjustment for peak height to get to appropriate value for downstream
+    % analysis. Find a better way if possible
+    fwd_adjust_factor = abs(min(Df_disp(1:round(fwd_pk_width/3)))) / (fwd_buoy_mass_pg / mass_cal_factor);
+    Df_disp = Df_disp / fwd_adjust_factor;
 
     % Antinode correction
-    V_dimensionless = ...
-        (fwd_fluid_dens_kgm3 * (cell_total_volume_fl * fl_to_m3)^(5/3)) / ...
-        (2 * ((6 * pi^2)^(1/3)) * m_eff_theoretical_kg);
-    Df_rot = -fwd_baseline_freq * ad * V_dimensionless * dudx.^2 / (l_cantilever * 1e-6)^2;
-    Df_peak = Df_disp + 0.2 * Df_rot;
+    % V_dimensionless = ...
+    %     (fwd_fluid_dens_kgm3 * (cell_total_volume_fl * fl_to_m3)^(5/3)) / ...
+    %     (2 * ((6 * pi^2)^(1/3)) * m_eff_theoretical_kg);
+    % Df_rot = -fwd_baseline_freq * ad * V_dimensionless * dudx.^2 / (l_cantilever * 1e-6)^2;
+    % Df_peak = Df_disp + 0.2 * Df_rot;
+    Df_peak = Df_disp;
 
     % Append into frequency array
     append_start_idx = fwd_start_idx + round(fwd_datapoints * fwd_pk_arrival_frac);
     freq_window = freq(append_start_idx:append_start_idx + fwd_pk_width - 1);
-    peak_segment = freq_window + Df_peak;
+    peak_segment = freq_window - Df_peak';
     freq(append_start_idx:append_start_idx + fwd_pk_width - 1) = ...
         peak_segment;
 
@@ -186,21 +191,21 @@ for j = 1:n_traps
     seg_win_curv = freq(fwd_start_idx:fwd_start_idx + fwd_datapoints - 1);
     curv_idx = 0:fwd_datapoints - 1;
     
-    fwd_a = back_pkfit_chosen(1); fwd_b = back_pkfit_chosen(2); 
-    fwd_c = back_pkfit_chosen(3); fwd_d = back_pkfit_chosen(4);
+    fwd_a = fwd_pkfit_chosen(1); fwd_b = fwd_pkfit_chosen(2); 
+    fwd_c = fwd_pkfit_chosen(3); fwd_d = fwd_pkfit_chosen(4);
     bl_curv = fwd_a * curv_idx.^3 + fwd_b * curv_idx.^2 + fwd_c * curv_idx + fwd_d;
-    seg_win_curv = seg_win_curv + bl_curv;
+    seg_win_curv = seg_win_curv + bl_curv';
     freq(fwd_start_idx:fwd_start_idx + fwd_datapoints - 1) = ...
         seg_win_curv;
     
     % Local curvature at particle transit location
-    fwd_part_x = round(fwd_datapoints * fwd_pk_arrival_frac + fwd_pk_width / 2);
+    fwd_x = round(fwd_datapoints * fwd_pk_arrival_frac + fwd_pk_width / 2);
     fwd_local_curvature = ...
-        2 * fwd_pkfit_a / (1 + (2 * fwd_pkfit_a * fwd_part_x + fwd_pkfit_b)^2)^(3/2);
+        (6 * fwd_a * fwd_x + 2 * fwd_b) ./ (1 + (3 * fwd_a * fwd_x.^2 + 2 * fwd_b * fwd_x + fwd_c)^2)^(3/2);
 
     %% Simulate backwards signal
     % Relevant biophysical properties
-    cell_total_density_kgm3 = cell_dry_density_gcm3 * (1 - rel_water_content) + back_fluid_dens_kgm3 * rel_water_content;
+    cell_total_density_kgm3 = cell_dry_density_kgm3 * (1 - rel_water_content) + back_fluid_dens_kgm3 * rel_water_content;
     back_buoy_mass_kg = (cell_total_density_kgm3 - back_fluid_dens_kgm3) * cell_total_volume_fl * fl_to_m3;
     back_buoy_mass_pg = back_buoy_mass_kg * kg_to_pg;
 
@@ -213,18 +218,24 @@ for j = 1:n_traps
 
     % Peak trace given particle buoyant mass
     Df_disp = -0.5 * ab * u.^2 * back_buoy_mass_kg / m_eff_theoretical_kg * back_baseline_freq;
+    
+    % Adjustment for peak height to get to appropriate value for downstream
+    % analysis. Find a better way if possible
+    back_adjust_factor = abs(min(Df_disp(1:round(back_pk_width/3)))) / (back_buoy_mass_pg / mass_cal_factor);
+    Df_disp = Df_disp / back_adjust_factor;
 
     % Antinode correction
-    V_dimensionless = ...
-        (back_fluid_dens_kgm3 * (cell_total_volume_fl * fl_to_m3)^(5/3)) / ...
-        (2 * ((6 * pi^2)^(1/3)) * m_eff_theoretical_kg);
-    Df_rot = -back_baseline_freq * ad * V_dimensionless * dudx.^2 / (l_cantilever * 1e-6)^2;
-    Df_peak = Df_disp + 0.2 * Df_rot;
+    % V_dimensionless = ...
+    %     (back_fluid_dens_kgm3 * (cell_total_volume_fl * fl_to_m3)^(5/3)) / ...
+    %     (2 * ((6 * pi^2)^(1/3)) * m_eff_theoretical_kg);
+    % Df_rot = -back_baseline_freq * ad * V_dimensionless * dudx.^2 / (l_cantilever * 1e-6)^2;
+    % Df_peak = Df_disp + 0.2 * Df_rot;
+    Df_peak = Df_disp;
 
     % Append into frequency array
     append_start_idx = back_start_idx + round(back_datapoints * back_pk_arrival_frac);
     freq_window = freq(append_start_idx:append_start_idx + back_pk_width - 1);
-    peak_segment = freq_window + Df_peak;
+    peak_segment = freq_window - Df_peak';
     freq(append_start_idx:append_start_idx + back_pk_width - 1) = ...
         peak_segment;
 
@@ -236,41 +247,48 @@ for j = 1:n_traps
     back_c = back_pkfit_chosen(3); back_d = back_pkfit_chosen(4);
     bl_curv = back_a * curv_idx.^3 + back_b * curv_idx.^2 + back_c * curv_idx + back_d;
     
-    seg_win_curv = seg_win_curv + bl_curv;
+    seg_win_curv = seg_win_curv + bl_curv';
     freq(back_start_idx:back_start_idx + back_datapoints - 1) = ...
         seg_win_curv;
 
     % Local curvature at particle transit location
-    back_part_x = round(back_datapoints * back_pk_arrival_frac + back_pk_width / 2);
+    back_x = round(back_datapoints * back_pk_arrival_frac + back_pk_width / 2);
     back_local_curvature = ...
-        2 * back_pkfit_a / (1 + (2 * back_pkfit_a * back_part_x + back_pkfit_b)^2)^(3/2);
+        (6 * back_a * back_x + 2 * back_b) ./ (1 + (3 * back_a * back_x.^2 + 2 * back_b * back_x + back_c)^2)^(3/2);
 
     % Save parameters to arrays
     local_curv_fwd_back(j, :) = [fwd_local_curvature, back_local_curvature];
     buoy_mass_fwd_back(j, :) = [fwd_buoy_mass_pg, back_buoy_mass_pg];
-    dry_mass_arr(j, :) = cell_dry_density_gcm3;
+    dry_mass_arr(j, :) = cell_dry_density_kgm3 / 1000;
     dry_vol_arr(j, :) = cell_dry_volume_fl;
     tot_vol_arr(j, :) = cell_total_volume_fl;
     rel_wc_arr(j, :) = (cell_total_volume_fl - cell_dry_volume_fl) / cell_total_volume_fl;
     arrival_frac_fwd_back(j, :) = [fwd_pk_arrival_frac, back_pk_arrival_frac];
     pk_width_fwd_back(j, :) = [fwd_pk_width, back_pk_width];
-
-    %% Add in noise term
-    freq = freq + noise_term;
 end
 
+%% Add in noise term
+freq = freq + noise_term';
+
+%% Visualize truncated signal 
+figure;
+plot(freq(1:1e6)) 
+xlabel('Index')
+ylabel('Frequency')
+
 %% Write data to binary files
+disp('Writing raw data to binary files...')
 datestr_ = string(datetime('now', 'Format', 'yyyyMMdd.hhmm'));
 
 % Write frequency data
 freq_fname = datestr_ + "_frequencies";
 freq_fid = fopen(fullfile(dir_path, freq_fname), 'w', 'b');
-fwrite(freq_fid, freq);
+fwrite(freq_fid, freq, 'float64');
 
 % Write time data
 time_fname = datestr_ + "_time";
 time_fid = fopen(fullfile(dir_path, time_fname), 'w', 'b');
-fwrite(time_fid, time);
+fwrite(time_fid, time, 'float64');
 
 % Write valve state data
 vs_fname = datestr_ + "_valvestates";
@@ -280,37 +298,48 @@ fwrite(vs_fid, valve_state);
 fclose('all');
 
 %% Write mass calibration json file
+disp('Writing mass calibration json...')
+
 datestr_ = string(datetime('now', 'Format', 'yyyyMMdd'));
-st.cal_factor_pg_per_hz = mass_cal_factor;
-st.cv_mass = mass_cal_cv;
+st_mass_cal.cal_factor_pg_per_hz = mass_cal_factor;
+st_mass_cal.cv_mass = mass_cal_cv;
 fname = datestr_ + "_12um_mass_calibration.json";
 json_id = fopen(fullfile(dir_path, fname), 'w');
-js_str = jsonencode(st, PrettyPrint=true);
-fprintf(jsonID, js_str);
+js_str = jsonencode(st_mass_cal, PrettyPrint=true);
+fprintf(json_id, js_str);
 fclose(json_id);
 
 %% Write density baseline frequency calibration json file
+disp('Writing density baseline calibration json...')
+
 slope = (back_baseline_freq - fwd_baseline_freq) / ...
     ((back_fluid_dens_kgm3 - fwd_fluid_dens_kgm3) / 1000);
 intercept = fwd_baseline_freq - slope * (fwd_fluid_dens_kgm3 / 1000);
 
-st.slope = slope;
-st.intercept = intercept;
+st_bl_cal.slope = slope;
+st_bl_cal.intercept = intercept;
 fname = datestr_ + "_density_baseline_calibration.json";
 json_id = fopen(fullfile(dir_path, fname), 'w');
-js_str = jsonencode(st, PrettyPrint=true);
-fprintf(jsonID, js_str);
+js_str = jsonencode(st_bl_cal, PrettyPrint=true);
+fprintf(json_id, js_str);
 fclose(json_id);
 
 %% Write ground truth file
+disp('Writing ground truth parameter csv...')
+
 gt_table = table();
 gt_table.particle_idx = (1:n_traps)';
+
 gt_table.fwd_bl_fit_a = fwd_bl_fit_abc(:, 1);
 gt_table.fwd_bl_fit_b = fwd_bl_fit_abc(:, 2);
 gt_table.fwd_bl_fit_c = fwd_bl_fit_abc(:, 3);
+gt_table.fwd_bl_fit_d = fwd_bl_fit_abc(:, 4);
+
 gt_table.back_bl_fit_a = back_bl_fit_abc(:, 1);
 gt_table.back_bl_fit_b = back_bl_fit_abc(:, 2);
 gt_table.back_bl_fit_c = back_bl_fit_abc(:, 3);
+gt_table.back_bl_fit_d = back_bl_fit_abc(:, 4);
+
 gt_table.fwd_local_curv = local_curv_fwd_back(:, 1);
 gt_table.back_local_curv = local_curv_fwd_back(:, 2);
 gt_table.fwd_buoy_mass = buoy_mass_fwd_back(:, 1);
