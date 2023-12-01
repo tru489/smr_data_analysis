@@ -31,18 +31,20 @@ a_footprint = 391 * 57;
 v_silicon = (20 + 2 * 2) * a_footprint - v_channel;
 
 % Cantilever mass (kg)
-dens_silicon = 7850; % kg/m^3
+dens_silicon = 2330; % kg/m^3                   7850
 m_cantilever = v_silicon * dens_silicon * 1e-18; % kg
+% Assume cantilever is filled with PBS: 
+m_cantilever = v_channel * fwd_fluid_dens_kgm3;
 
 % SMR calibration factor (pg/Hz)
-mass_cal_factor = 0.7;
+mass_cal_factor = 0.87;
 mass_cal_cv = 0.01;
 
 % Effective mass fraction (for single-clamped cantilever; from theory)
 m_eff_fraction = 0.25;
 
 %% Baseline SMR frequency values 
-fwd_baseline_freq = 1.6e6; % Hz
+fwd_baseline_freq = 1.16e6; % Hz
 
 %% Define peak/segment duration parameters
 % Generate indices of final frequency array
@@ -136,7 +138,7 @@ for j = 1:n_particles
         fwd_fluid_dens_kgm3);
     [ad, Reynolds_water_height] = ad_value(fwd_baseline_freq, cell_radius_m, fwd_fluid_dyn_visc_pas, ...
         h_channel_um * 1e-6, fwd_fluid_dens_kgm3);
-    [u, x, dudx] = U_n(1, 2, fwd_pk_width, 'single-clamped');
+    [u, x, dudx] = U_n(l_cantilever*1e-6, 2, fwd_pk_width, 'single-clamped');
 
     % Peak trace given particle buoyant mass
     Df_disp = -0.5 * ab * u.^2 * fwd_buoy_mass_kg / m_eff_theoretical_kg * fwd_baseline_freq;

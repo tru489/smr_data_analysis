@@ -13,7 +13,7 @@ slice = [];
 freq = fread(freqfile, 'float64=>double');
 time = fread(timefile, 'float64=>double');
 
-freq = sgolayfilt(freq, 3, 11);
+% freq = sgolayfilt(freq, 3, 11);
 
 if isempty(slice)
     sl = 1:length(time);
@@ -22,7 +22,10 @@ else
 end
 
 fh = figure;
-plot(sl, freq(sl))
+h = plot(sl, freq(sl));
+ax = ancestor(h, 'axes');
+ax.XAxis.Exponent = 0;
+xtickformat('%.0f')
 xlabel('Datapoints', 'FontSize', 12)
 ylabel('Frequency (Hz)', 'FontSize', 12)
 
