@@ -56,7 +56,7 @@ end
 if run_params.bl_select.use_presets
     if is_density_trap
         % Estimated # datapoints for full transit
-        run_params.bl_select.estimated_datapoints = 500;
+        run_params.bl_select.estimated_datapoints = 500;  %500
         % Estimate of baseline noise level
         run_params.bl_select.estimated_noise = 0.5;
         % Length of savitsky-golay filter to filter frequency data
@@ -66,7 +66,7 @@ if run_params.bl_select.use_presets
         run_params.bl_select.segment_threshold = 200;
         
         % Derivative threshold to find flat part of baseline
-        run_params.bl_select.diff_threshold = 0.05; % 0.005
+        run_params.bl_select.diff_threshold = 0.005; % 0.05
         % Window of median filter, which removes the flat part in the anti-node
         run_params.bl_select.med_filt_wd = 30; % 200
         % Derivative threshold used to remove the flat part in the anti-node
@@ -74,11 +74,11 @@ if run_params.bl_select.use_presets
         % Distance over which there are unique 2nd mode peaks
         run_params.bl_select.unqPeakDist = 300; % 250
         % Baseline offset threshold to select for peaks
-        run_params.bl_select.offset_input = 5; % 3
+        run_params.bl_select.offset_input = 3; % 3 % 1
         
         % Choose the first point left/right of the secondary peaks 40% percent 
         % of the average baseline freqvalue
-        run_params.bl_select.edgethres = 0.12;
+        run_params.bl_select.edgethres = 0.03; % 0.12
         % Allow 102% of the minimum standard deviation
         run_params.bl_select.stdevmultiplier = 3;
         % Allow 90% of the deviation from mean frequency closest to 2ndary peaks

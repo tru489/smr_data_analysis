@@ -20,7 +20,11 @@ if isnan(pkset_summ)
     file_selection.mass_cal = 1;
     file_selection.dens_bl_cal = 0;
     file_selection.pmt_data = 1;
-    file_selection.cc_data = 1;
+    if run_params.fl_excl.use_coulter_calibration
+        file_selection.cc_data = 1;
+    else
+        file_selection.cc_data = 0;
+    end
     
     [parsed_files, data_dir, formatted_date] = parse_dir_contents(file_selection);
     
@@ -65,9 +69,13 @@ smr_table = array2table([curated.real_time_s, curated.mass_pg, ...
     readout_pairing(run_params, smr_table, output_pmt_table, param_table, ...
     save_abs_path);
 
-[vol_cal_fl_per_au, cc_hist_bin_edges, cc_hist_bin_counts] = ...
-    coulter_counter_calibration(run_params, coulter_data, ...
-    readout_paired);
+if run_params.fl_excl.use_coulter_calibration
+    [vol_cal_fl_per_au, cc_hist_bin_edges, cc_hist_bin_counts] = ...
+        coulter_counter_calibration(run_params, coulter_data, ...
+        readout_paired);
+else
+    vol_cal_fl_per_au = run_params.fl_excl.manual_fl_per_au_cal_factor;
+end
 
 total_vols_fl = readout_paired.vol_au * vol_cal_fl_per_au;
 [~, idx_smr, idx_pmt] = intersect(curated.real_time_s, ...

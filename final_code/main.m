@@ -26,6 +26,10 @@ if run_params.analysis_type.base_freq_density_calibration
     base_freq_dens_cal(run_params)
 end
 
+if run_params.analysis_type.dens_trap_base_freq_recal
+    recal_dens_params(run_params)
+end
+
 %% Analysis types
 if run_params.analysis_type.mass
     analyze_mass(run_params)

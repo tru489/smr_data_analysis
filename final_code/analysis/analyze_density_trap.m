@@ -112,7 +112,6 @@ end
 writetable(paired_datasmr, fullfile(save_abs_path, 'peakset_summary_paired.csv'))
 
 %% Create powerpoint
-disp('Creating powerpoint...')
 fig_path_cell = plot_dens_trap_results(run_params, paired_datasmr);
 
 stats_cell = get_dens_trap_stats(run_params, ...

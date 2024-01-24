@@ -5,7 +5,7 @@ function analyze_mass(run_params)
 %   run_params (struct): running parameters for preprocessing code
 
 %% Load data files
-file_selection.valve_state = 0;
+file_selection.valve_state = 1;
 file_selection.mass_cal = 1;
 file_selection.dens_bl_cal = 0;
 file_selection.pmt_data = 0;
@@ -15,6 +15,7 @@ file_selection.cc_data = 0;
 
 freqfile = parsed_files.freq_id;
 timefile = parsed_files.smr_time_id;
+vsfile = parsed_files.vs_id;
 mass_cal_params = parsed_files.mass_cal;
 
 %% Add file to save processed data
@@ -23,7 +24,7 @@ save_abs_path = run_params.saving.save_abs_path;
 
 %% Analyze frequency data to get peaks
 [processed_freq_data, pass_struct, init_time] = analyze_freq_data(run_params, ...
-    freqfile, timefile);
+    freqfile, timefile, vsfile);
 summary_pks = processed_to_summary(run_params, processed_freq_data, init_time, ...
     mass_cal_params.cal_factor_pg_per_hz);
 

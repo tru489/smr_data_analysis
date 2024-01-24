@@ -4,7 +4,7 @@ format long;
 addpath(genpath("helpers"))
 
 %% Save path for output files
-dir_path = "A:\thomasu\raw_data\2023-11-29\10-31-rep5_paired_sim";
+dir_path = "A:\thomasu\raw_data\2024-01-24\10-31-23_paired_sim_emp_rand_bl_rep1";
 
 %% Define noise parameters
 % Standard deviation sigma of noise in (Hz)
@@ -15,12 +15,13 @@ noise_level = 0.33;
 alpha_factor = 0;
 
 %% Define peak/segment duration parameters
-n_particles = 1308; % Number of particles measured
+n_particles = 66; % Number of particles measured
 
 % Forward measurement
 fwd_pk_arrival_frac = [0.5]; % percent; percent of total search time at which particle appears
-fwd_search_time = 3; % s; time taken to seek new particle
-fwd_pk_width = [450]; % datapoints; peak width
+fwd_search_time = 1.5; % s; time taken to seek new particle
+% fwd_pk_width = [420]; % datapoints; peak width
+fwd_pk_width = [normrnd(396.30, 5.75, [2000,1]); normrnd(419.14, 5.77, [2000,1])];
 
 %% Fluid physical properties
 % Water density and dynamic viscosity
@@ -38,7 +39,7 @@ d2o_density = 1104.481; % kg/m3
 %% Cell biophysical properties
 cell_dry_density_gcm3 = [1.05]; % g/cm3
 
-vol_fl_emp = 267.9817116;
+vol_fl_emp = 261.6449;
 
 cell_dry_volume_fl = vol_fl_emp; % fl
 cell_total_volume_fl = vol_fl_emp; % fl

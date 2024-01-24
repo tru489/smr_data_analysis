@@ -8,15 +8,15 @@ slice = [];
 %%
 
 [freqfile, data_dir] = get_raw_file_handle('frequency');
-[timefile, ~] = get_raw_file_handle('time');
+% [timefile, ~] = get_raw_file_handle('time');
 
 freq = fread(freqfile, 'float64=>double');
-time = fread(timefile, 'float64=>double');
+% time = fread(timefile, 'float64=>double');
 
 % freq = sgolayfilt(freq, 3, 11);
 
 if isempty(slice)
-    sl = 1:length(time);
+    sl = 1:length(freq);
 else
     sl = slice;
 end
@@ -30,4 +30,4 @@ xlabel('Datapoints', 'FontSize', 12)
 ylabel('Frequency (Hz)', 'FontSize', 12)
 
 fclose(freqfile);
-fclose(timefile);
+% fclose(timefile);

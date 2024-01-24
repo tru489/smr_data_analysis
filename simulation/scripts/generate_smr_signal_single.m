@@ -66,21 +66,23 @@ valve_state = ones(total_datapoints, 1) * back_vstate;
 %% Cell biophysical properties
 % Stochastic selection of parameters
 % Cell biophysical parameters
-cell_dry_density_kgm3 = cell_dry_density_gcm3(randsample(length(cell_dry_density_gcm3), 1, true)) * 1000;
-cell_dry_volume_fl = cell_dry_volume_fl(randsample(length(cell_dry_volume_fl), 1, true));
-cell_total_volume_fl = cell_total_volume_fl(randsample(length(cell_total_volume_fl), 1, true));
+cell_dry_density_kgm3_temp = cell_dry_density_gcm3(randsample(length(cell_dry_density_gcm3), 1, true)) * 1000;
+cell_dry_volume_fl_temp = cell_dry_volume_fl(randsample(length(cell_dry_volume_fl), 1, true));
+cell_total_volume_fl_temp = cell_total_volume_fl(randsample(length(cell_total_volume_fl), 1, true));
 
 fl_to_m3 = 1e-18; % fl/m3
 
-rel_water_content = (cell_total_volume_fl - cell_dry_volume_fl) / cell_total_volume_fl;
+rel_water_content = (cell_total_volume_fl_temp - cell_dry_volume_fl_temp) / cell_total_volume_fl_temp;
 
-cell_radius_m = (3 * cell_total_volume_fl / (4 * pi)) ^ (1/3) * 1e-6; % m
+cell_radius_m = (3 * cell_total_volume_fl_temp / (4 * pi)) ^ (1/3) * 1e-6; % m
 
 %% Generate noise term
-Colornoise_2 = dsp.ColoredNoise(alpha_factor, total_datapoints, ...
-    'OutputDataType', 'double');
-target_noise_Hz = noise_level;
-noise_term = Colornoise_2()' / std(Colornoise_2()') * noise_level;
+% Colornoise_2 = dsp.ColoredNoise(alpha_factor, total_datapoints, ...
+%     'OutputDataType', 'double');
+% target_noise_Hz = noise_level;
+% noise_term = Colornoise_2()' / std(Colornoise_2()') * noise_level;
+
+noise_term = generate_smr_measurement_noise(total_datapoints);
 
 %% Start simulation
 % Feature list:
@@ -113,8 +115,9 @@ for j = 1:n_particles
     % Parameters set to a single value in an array will just use that
     % single value
     % Peak placement/property parameters
-    fwd_pk_arrival_frac = fwd_pk_arrival_frac(randsample(length(fwd_pk_arrival_frac), 1, true));
-    fwd_pk_width = fwd_pk_width(randsample(length(fwd_pk_width), 1, true));
+    fwd_pk_arrival_frac_temp = fwd_pk_arrival_frac(randsample(length(fwd_pk_arrival_frac), 1, true));
+    fwd_pk_width_temp = round(fwd_pk_width(randsample(length(fwd_pk_width), 1, true)));
+    fwd_pk_width_temp = 2 * ceil(fwd_pk_width_temp / 2); % peak generator requires even peak width
 
     % Forward baseline fitting parameters
     fwd_pkfit_chosen = zeros(size(fwd_pkfit_params, 1), 1);
@@ -128,8 +131,8 @@ for j = 1:n_particles
 
     %% Simulate forward signal
     % Relevant biophysical properties
-    cell_total_density_kgm3 = cell_dry_density_kgm3 * (1 - rel_water_content) + fwd_fluid_dens_kgm3 * rel_water_content;
-    fwd_buoy_mass_kg = (cell_total_density_kgm3 - fwd_fluid_dens_kgm3) * cell_total_volume_fl * fl_to_m3;
+    cell_total_density_kgm3 = cell_dry_density_kgm3_temp * (1 - rel_water_content) + fwd_fluid_dens_kgm3 * rel_water_content;
+    fwd_buoy_mass_kg = (cell_total_density_kgm3 - fwd_fluid_dens_kgm3) * cell_total_volume_fl_temp * fl_to_m3;
     kg_to_pg = 1e15;
     fwd_buoy_mass_pg = fwd_buoy_mass_kg * kg_to_pg;
 
@@ -138,14 +141,14 @@ for j = 1:n_particles
         fwd_fluid_dens_kgm3);
     [ad, Reynolds_water_height] = ad_value(fwd_baseline_freq, cell_radius_m, fwd_fluid_dyn_visc_pas, ...
         h_channel_um * 1e-6, fwd_fluid_dens_kgm3);
-    [u, x, dudx] = U_n(l_cantilever*1e-6, 2, fwd_pk_width, 'single-clamped');
+    [u, x, dudx] = U_n(l_cantilever*1e-6, 2, fwd_pk_width_temp, 'single-clamped');
 
     % Peak trace given particle buoyant mass
     Df_disp = -0.5 * ab * u.^2 * fwd_buoy_mass_kg / m_eff_theoretical_kg * fwd_baseline_freq;
     
     % Adjustment for peak height to get to appropriate value for downstream
     % analysis. Find a better way if possible
-    fwd_adjust_factor = abs(min(Df_disp(1:round(fwd_pk_width/3)))) / (fwd_buoy_mass_pg / mass_cal_factor);
+    fwd_adjust_factor = abs(min(Df_disp(1:round(fwd_pk_width_temp/3)))) / (fwd_buoy_mass_pg / mass_cal_factor);
     Df_disp = Df_disp / fwd_adjust_factor;
 
     % Antinode correction
@@ -157,10 +160,10 @@ for j = 1:n_particles
     Df_peak = Df_disp;
 
     % Append into frequency array
-    append_start_idx = fwd_start_idx + round(fwd_datapoints * fwd_pk_arrival_frac);
-    freq_window = freq(append_start_idx:append_start_idx + fwd_pk_width - 1);
+    append_start_idx = fwd_start_idx + round(fwd_datapoints * fwd_pk_arrival_frac_temp);
+    freq_window = freq(append_start_idx:append_start_idx + fwd_pk_width_temp - 1);
     peak_segment = freq_window - Df_peak';
-    freq(append_start_idx:append_start_idx + fwd_pk_width - 1) = ...
+    freq(append_start_idx:append_start_idx + fwd_pk_width_temp - 1) = ...
         peak_segment;
 
     % Add in baseline curvature
@@ -175,19 +178,19 @@ for j = 1:n_particles
         seg_win_curv;
     
     % Local curvature at particle transit location
-    fwd_x = round(fwd_datapoints * fwd_pk_arrival_frac + fwd_pk_width / 2);
+    fwd_x = round(fwd_datapoints * fwd_pk_arrival_frac_temp + fwd_pk_width_temp / 2);
     fwd_local_curvature = ...
         (6 * fwd_a * fwd_x + 2 * fwd_b) ./ (1 + (3 * fwd_a * fwd_x.^2 + 2 * fwd_b * fwd_x + fwd_c)^2)^(3/2);
 
     % Save parameters to arrays
     local_curv_fwd_back(j, :) = [fwd_local_curvature];
     buoy_mass_fwd_back(j, :) = [fwd_buoy_mass_pg];
-    dry_mass_arr(j, :) = cell_dry_density_kgm3 / 1000;
-    dry_vol_arr(j, :) = cell_dry_volume_fl;
-    tot_vol_arr(j, :) = cell_total_volume_fl;
-    rel_wc_arr(j, :) = (cell_total_volume_fl - cell_dry_volume_fl) / cell_total_volume_fl;
-    arrival_frac_fwd_back(j, :) = [fwd_pk_arrival_frac];
-    pk_width_fwd_back(j, :) = [fwd_pk_width];
+    dry_mass_arr(j, :) = cell_dry_density_kgm3_temp / 1000;
+    dry_vol_arr(j, :) = cell_dry_volume_fl_temp;
+    tot_vol_arr(j, :) = cell_total_volume_fl_temp;
+    rel_wc_arr(j, :) = (cell_total_volume_fl_temp - cell_dry_volume_fl_temp) / cell_total_volume_fl_temp;
+    arrival_frac_fwd_back(j, :) = [fwd_pk_arrival_frac_temp];
+    pk_width_fwd_back(j, :) = [fwd_pk_width_temp];
 end
 
 %% Add in noise term
@@ -195,7 +198,11 @@ freq = freq + noise_term';
 
 %% Visualize truncated signal 
 figure;
-plot(freq(1:1e6)) 
+if length(freq) > 1e6
+    plot(freq(1:1e6)) 
+else 
+    plot(freq(1:end))
+end
 xlabel('Index')
 ylabel('Frequency')
 

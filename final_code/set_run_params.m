@@ -52,7 +52,7 @@ run_params.density_trap.fluid2_vstate = 7;
 run_params.density_trap.max_time_gap = 10000; % ms
 
 % Minimum time gap between adjacent forward peaks
-run_params.density_trap.min_forward_gap = 2000; % ms
+run_params.density_trap.min_forward_gap = 100; % ms
 
 % Whether or not to save unpaired data
 run_params.density_trap.save_unpaired = 1;
@@ -79,7 +79,7 @@ run_params.curation.auto_rejection = 1;
 run_params.bl_select.use_presets = 1;
 
 % Estimated # datapoints for full transit
-run_params.bl_select.estimated_datapoints = 500;
+run_params.bl_select.estimated_datapoints = 500; % 500
 % Estimate of baseline noise level
 run_params.bl_select.estimated_noise = 0.5;
 % Length of savitsky-golay filter to filter frequency data
@@ -87,7 +87,7 @@ run_params.bl_select.sgolay_length_idx = 4;
 % Lower threshold to half-length (in datapoints) of data segment
 % surrounding a single peak
 run_params.bl_select.segment_threshold = 200;
-
+ 
 % Derivative threshold to find flat part of baseline
 run_params.bl_select.diff_threshold = 0.05; % 0.005
 % Window of median filter, which removes the flat part in the anti-node
@@ -95,7 +95,7 @@ run_params.bl_select.med_filt_wd = 30; % 200
 % Derivative threshold used to remove the flat part in the anti-node
 run_params.bl_select.bs_dev_thres = 0.5; % 0.5
 % Distance over which there are unique 2nd mode peaks
-run_params.bl_select.unqPeakDist = 300; % 250
+run_params.bl_select.unqPeakDist = 300; % 250 % 300
 % Baseline offset threshold to select for peaks
 run_params.bl_select.offset_input = 5; % 3
 
@@ -176,6 +176,11 @@ run_params.fl_excl.thresh_baselineDiff_over_sig = 0.05;
 % Cutoff for left-right baseline slopes
 run_params.fl_excl.thresh_base_slope = 2*10^-3;
 run_params.fl_excl.thresh_base_height_range = 0.05;
+
+% Use calibration with coulter counter data, or use manually input
+% parameter?
+run_params.fl_excl.use_coulter_calibration = 0;
+run_params.fl_excl.manual_fl_per_au_cal_factor = 16.710185712;
 
 %% Visualization preferences
 % Create matlab figure windows when analysis is complete

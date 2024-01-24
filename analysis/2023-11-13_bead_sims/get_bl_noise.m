@@ -57,6 +57,9 @@ for i = 1:size(idx_arr, 1)
     % (from PSD)
     hexp = wtmm(noise);
     alpha_arr(i) = 2 * hexp + 1;
+    
+    % 
+    figure; periodogram(noise);
 end
 
 disp('Average and std of std(noise):')

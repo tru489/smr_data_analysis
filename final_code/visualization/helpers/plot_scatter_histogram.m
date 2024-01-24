@@ -28,7 +28,7 @@ end
 fh = figure('visible', fig_visibility);
 set(fh, 'color', 'w')
 if isnan(group_variable)
-    s = scatterhistogram(table_, xdata, ydata);
+    s = scatterhistogram(table_, xdata, ydata, 'NumBins', 50);
 else
     s = scatterhistogram(table_, xdata, ydata, 'GroupVariable', group_variable);
 end
@@ -37,7 +37,4 @@ xlabel(xlabel_)
 ylabel(ylabel_)
 s.MarkerAlpha = 0.5; s.MarkerSize = 15;
 
-
-
 end
-

@@ -50,6 +50,8 @@ for i = 1:length(rev_cols)
 end
 
 % Concatenate and sort peaks
+fluid1_datasmr = fluid1_datasmr(fluid1_datasmr.valve_state == f1_vstate, :);
+fluid2_datasmr = fluid2_datasmr(fluid2_datasmr.valve_state == f2_vstate, :);
 full_datasmr = [fluid1_datasmr; fluid2_datasmr];
 sorted_full = sortrows(full_datasmr, 'peak_time_s');
 
@@ -76,13 +78,24 @@ for i = 1:length(group_indices)
     backward_idx = group_indices(i) + 1;
     next_idx = group_indices(i) + 2;
 
-    if prev_idx >= 1 && vstates(prev_idx) == f1_vstate && ...
-            times(forward_idx) - times(prev_idx) < min_forward_gap
-        pair_flag = 0;
+    % Check if there are consecutive forward peaks within a specified time
+    % window
+    if prev_idx >= 1
+        if vstates(prev_idx) == f1_vstate && times(forward_idx) - times(prev_idx) < min_forward_gap
+            pair_flag = 0;
+        end
     end
-    if next_idx <= length(vstates) && vstates(next_idx) == f2_vstate
-        pair_flag = 0;
+
+    % Check if there are consecutive backward peaks within a specified time
+    % window
+    if next_idx <= length(vstates)
+        if vstates(next_idx) == f2_vstate && (times(next_idx) - times(forward_idx)) < max_time_fl1_fl2
+            pair_flag = 0;
+        end
     end
+
+    % Check if the time gap between the forward and backward peaks is too
+    % large
     if times(backward_idx) - times(forward_idx) > max_time_fl1_fl2
         pair_flag = 0;
     end
