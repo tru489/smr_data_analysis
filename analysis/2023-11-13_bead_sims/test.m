@@ -1,17 +1,11 @@
-close all
-Colornoise_2 = dsp.ColoredNoise(-1, 1e6, ...
-    'OutputDataType', 'double');
-noise_term = Colornoise_2()' / std(Colornoise_2()') * 1;
-% [Pxx,F] = pwelch(x,hamming(128),[],[],Fs,'psd');
-% plot(log2(F(2:end)),10*log10(Pxx(2:end)))
-% hold on;
-% 
-% PSDPink = 1./(F(2:end).^-1);
-% plot(log2(F(2:end)),10*log10(PSDPink),'r',linewidth=2)
+close all;
+addpath(genpath("C:\thomasu\smr_data_analysis"))
+
+fpaths = ls("C:\thomasu\smr_data_analysis\analysis\2023-11-13_bead_sims\data\10um\emp");
 
 
-[dh, hb, cp] = dwtleader(noise_term);
-disp(2 * cp(1) + 1)
-
-hexp = wtmm(noise_term);
-disp(2 * hexp + 1)
+for i = 1:length(fpaths)
+    fp = fpaths{i};
+    tab = readtable(fp);
+    figure; scatter(1:length(tab.mass_pg), tab.mass_pg)
+end

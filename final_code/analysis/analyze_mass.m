@@ -30,8 +30,20 @@ summary_pks = processed_to_summary(run_params, processed_freq_data, init_time, .
 
 %% Manual peak curation and data saving
 path_list = regexp(data_dir, filesep, 'split');
-curated = curation_handler(run_params, pass_struct, summary_pks, ...
-    save_abs_path, strcat(path_list{end-1}, '_', path_list{end}, '.csv'), 1);
+
+% Choose whether to load in a set of curation choices from previous session
+% or to perform curation from scratch
+if ~run_params.prefs.load_previous_curation
+    [curated, dataidx] = curation_handler(run_params, pass_struct, summary_pks, ...
+        save_abs_path, strcat(path_list{end-1}, '_', path_list{end}, '.csv'), 1);
+else
+    [fname, dir, ~] = uigetfile('../*.*','Select previous curation choice CSV...',' ');
+    dataidx = readmatrix(fullfile(dir, fname));
+    curated = summary_pks(dataidx, :);
+end
+
+% Write curation indices used in this session to CSV
+writematrix(dataidx, fullfile(save_abs_path, 'curation_index.csv'))
 
 stats_cell = get_mass_stats(run_params, summary_pks, curated, ...
     mass_cal_params.cal_factor_pg_per_hz);

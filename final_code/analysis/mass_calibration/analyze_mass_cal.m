@@ -13,11 +13,12 @@ function analyze_mass_cal(run_params, datasmr, save_dir, formatted_date)
 freqs = datasmr.avg_pk_ht_hz;
 
 fprintf('\nReference calibration particles:\n');
-fprintf('    4 um --> 4.000 um\n');
-fprintf('    6 um --> 6.007 um\n');
-fprintf('    7 um --> 6.976 um\n');
-fprintf('    8 um --> 7.979 um\n');
-fprintf('    9 um --> 8.956 um\n');
+fprintf('     4 um --> 4.000 um\n');
+fprintf('     5 um --> 5.000 um\n');
+fprintf('     6 um --> 6.007 um\n');
+fprintf('     7 um --> 6.976 um\n');
+fprintf('     8 um --> 7.979 um\n');
+fprintf('     9 um --> 8.956 um\n');
 fprintf('    10 um --> 10.12 um\n');
 fprintf('    12 um --> 12.01 um\n');
 fprintf('    15 um --> 14.97 um\n');

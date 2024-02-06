@@ -26,7 +26,7 @@ function [parsed_files, dirpath, date] = parse_dir_contents(file_selection)
 %   date (str): formatted datestring at which data was collected
 
 % Get path of dir containing data
-disp('Select data folder...')
+disp('Select SMR binary data folder...')
 dirpath = uigetdir('A:\thomasu\raw_data', 'Select data folder...');
 files = dir(dirpath);
 contents = {files(~[files.isdir]).name};

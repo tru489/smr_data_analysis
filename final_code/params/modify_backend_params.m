@@ -15,10 +15,19 @@ if is_density_trap
     % Uses an extended search baseline segment for identifying edge indices of
     % peakset during baseline identification (perhaps not crucial)
     run_params.backend.extended_bl_detect = 1;
-    % Uses a quadratic baseline fit, instead of a linear one, to 
-    run_params.backend.quad_baseline = 1;
+    
+    % Determines baseline fit. Integer indicates polynomial order, string
+    % indicates another fitting regime
+    run_params.backend.baseline_fit_type = 2;
+    % Determines whether to use nodes in baseline fitting
+    run_params.backend.use_node_bl_fit = false;
+    % Determines the weight to use for nodes in baseline fitting (integer
+    % factor which node terms are multiplied by in linear regression error
+    % function
+    run_params.backend.node_bl_weight = 1;
     % Does not use a polynomial fit on antipeaks in peak fitter (perhaps not 
     % crucial)
+    
     run_params.backend.antipeak_polyfit = 0;
     % Acquire a shorter baseline segment around each peakset for density 
     % trapping in order to better fit a quadratic baseline
@@ -37,7 +46,11 @@ if is_density_trap
     run_params.backend.fixed_peakset_thresh = 0;
 else
     run_params.backend.extended_bl_detect = 0;
-    run_params.backend.quad_baseline = 0;
+    
+    run_params.backend.baseline_fit_type = 1;
+    run_params.backend.use_node_bl_fit = false;
+    run_params.backend.node_bl_weight = 1;
+
     run_params.backend.antipeak_polyfit = 1;
     run_params.backend.shorter_baseline = 0;
     run_params.backend.adjusted_edge_indices = 0;
@@ -74,7 +87,7 @@ if run_params.bl_select.use_presets
         % Distance over which there are unique 2nd mode peaks
         run_params.bl_select.unqPeakDist = 300; % 250
         % Baseline offset threshold to select for peaks
-        run_params.bl_select.offset_input = 3; % 3 % 1
+        run_params.bl_select.offset_input = 5; % 3 % 1
         
         % Choose the first point left/right of the secondary peaks 40% percent 
         % of the average baseline freqvalue

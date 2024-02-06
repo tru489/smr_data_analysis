@@ -51,14 +51,29 @@ for i = 1:(length(peaks) - 1)
     antipeaks(i) = antiy_max_idx(1);
 end
 
-% Provide a linear fit of the baseline for this peakset and subtract away
+% Provide a fit of the baseline for this peakset and subtract away
 % from frequency
-
-if run_params.backend.quad_baseline
-    baseline_fit = polyfit(xbasedata, ybasedata, 2);
-else
-    baseline_fit = polyfit(xbasedata, ybasedata, 1);
+if string(class(run_params.backend.baseline_fit_type)) == "double"
+    if run_params.backend.use_node_bl_fit
+        an_weight = run_params.backend.node_bl_weight;
+        start_add_idx = length(xbasedata) + 1;
+        xbasedata_mod = xbasedata;
+        xbasedata_mod(start_add_idx:start_add_idx+length(antipeaks)*an_weight-1) = ...
+            repmat(xdata(antipeaks), an_weight, 1);
+        ybasedata_mod = ybasedata;
+        ybasedata_mod(start_add_idx:start_add_idx+length(antipeaks)*an_weight-1) = ...
+            repmat(ydata(antipeaks), an_weight, 1);
+        baseline_fit = polyfit(xbasedata_mod, ybasedata_mod, run_params.backend.baseline_fit_type);
+    else
+        baseline_fit = polyfit(xbasedata, ybasedata, run_params.backend.baseline_fit_type);
+    end
 end
+
+% if run_params.backend.quad_baseline
+%     baseline_fit = polyfit(xbasedata, ybasedata, 2);
+% else
+%     baseline_fit = polyfit(xbasedata, ybasedata, 1);
+% end
 
 baselineslope = baseline_fit(1);
 baselinefreq = (polyval(baseline_fit, xdata))';

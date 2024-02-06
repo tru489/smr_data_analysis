@@ -35,14 +35,51 @@ for i = 1:length(paths)
     node_dev = data.node_dev_mean;
     
     mass_slice_mask = (mass_pg > 40) & (mass_pg < 300);
-    vol_mask = vol_fl < 8000;
+    vol_mask = vol_fl < 8000 & vol_fl > 1000;
     % ndev_slice_mask = node_dev > -0.5;
     mask = mass_slice_mask & vol_mask;
     
     mass_pg = mass_pg(mask);
     vol_fl = vol_fl(mask);
     node_dev = node_dev(mask);
-    dens_gcm3 = mass_pg ./ vol_fl;
+    bl_sol_density = 1.005;
+    dens_gcm3 = bl_sol_density + mass_pg ./ vol_fl;
+
+    nv = node_dev ./ vol_fl;
+    p = polyfit(vol_fl, nv, 1);
+    fh_fit = figure(Visible='off');
+    scatter(vol_fl, nv, 'Marker', '.'); hold on;
+    plot(vol_fl, polyval(p, vol_fl), 'LineWidth', 2)
+    xlabel('Volume (fl)')
+    ylabel('Node deviation / volume (fl^-1)')
+    title(fig_labels(i))
+    saveas(fh_fit, save_path + labels(i) + "_snacs_fit.jpg")
+    
+    figure(fh_snacs)
+    m = p(1);
+    v_ref = median(vol_fl);
+    snacs = nv - m * (v_ref - vol_fl);
+    
+    snacs_gate = snacs > -0.001 & snacs < 0.002;
+    mass_pg = mass_pg(snacs_gate);
+    vol_fl = vol_fl(snacs_gate);
+    dens_gcm3 = dens_gcm3(snacs_gate);
+    node_dev = node_dev(snacs_gate);
+    snacs = snacs(snacs_gate);
+
+    s = swarmchart(categorical(repmat(fig_labels(i), length(snacs), 1)), ...
+        snacs, 8, 'filled', 'MarkerFaceAlpha', 0.2, ...
+        'MarkerEdgeAlpha',0.2, 'MarkerFaceColor', 'blue', 'MarkerEdgeColor', 'blue');
+    hold on;
+    b = boxchart(categorical(repmat(fig_labels(i), length(snacs), 1)), snacs);
+    b.BoxFaceColor = 'red';
+    b.BoxMedianLineColor = 'red';
+    b.MarkerColor = 'red';
+    b.WhiskerLineColor = 'red';
+    b.MarkerStyle = 'none';    
+    ylabel('SNACS (au)')
+    
+    % figure; scatter(vol_fl, snacs); ylabel('snacs'); xlabel('volume (fl)')
 
     figure(fh_mass)
     s = swarmchart(categorical(repmat(fig_labels(i), length(mass_pg), 1)), ...
@@ -83,33 +120,11 @@ for i = 1:length(paths)
     b.MarkerStyle = 'none';    
     ylabel('Density (g/cm3)')
 
-    p = polyfit(vol_fl, node_dev ./ vol_fl, 1);
-    fh_fit = figure;
-    scatter(vol_fl, node_dev ./ vol_fl, 'Marker', '.'); hold on;
-    plot(vol_fl, polyval(p, vol_fl), 'LineWidth', 2)
-    xlabel('Volume (fl)')
-    ylabel('Node deviation / volume (fl^-1)')
-    title(fig_labels(i))
-    saveas(fh_fit, save_path + labels(i) + "_snacs_fit.jpg")
-    
-    figure(fh_snacs)
-    snacs = polyval(p, vol_fl);
-    s = swarmchart(categorical(repmat(fig_labels(i), length(snacs), 1)), ...
-        snacs, 8, 'filled', 'MarkerFaceAlpha', 0.2, ...
-        'MarkerEdgeAlpha',0.2, 'MarkerFaceColor', 'blue', 'MarkerEdgeColor', 'blue');
-    hold on;
-    b = boxchart(categorical(repmat(fig_labels(i), length(snacs), 1)), snacs);
-    b.BoxFaceColor = 'red';
-    b.BoxMedianLineColor = 'red';
-    b.MarkerColor = 'red';
-    b.WhiskerLineColor = 'red';
-    b.MarkerStyle = 'none';    
-    ylabel('SNACS (au)')
-    
     slice_data = table();
     slice_data.mass_pg = mass_pg;
     slice_data.volume_fl = vol_fl;
     slice_data.density_gcm3 = dens_gcm3;
+    slice_data.node_dev_hz = node_dev;
     slice_data.snacs = snacs;
     writetable(slice_data, save_path + labels(i) + "_table.csv")
 end
@@ -124,4 +139,3 @@ saveas(fh_vol, save_path + "vol_compared.jpg")
 saveas(fh_dens, save_path + "dens_compared.jpg")
 saveas(fh_snacs, save_path + "snacs_compared.jpg")
 disp_dir_link(save_path)
-

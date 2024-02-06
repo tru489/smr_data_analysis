@@ -60,9 +60,20 @@ if ~rev_peaks_invert
         init_time, mass_cal_params.cal_factor_pg_per_hz);
     
     % ---------------- Manual peak curation and data saving ----------------
-    curated = curation_handler(run_params, pass_struct, summary_pks, ...
-        save_abs_path, 'peakset_summary_unpaired.csv', ...
-        run_params.density_trap.save_unpaired);
+    % Choose whether to load in a set of curation choices from previous session
+    % or to perform curation from scratch
+    if ~run_params.prefs.load_previous_curation
+        [curated, dataidx] = curation_handler(run_params, pass_struct, summary_pks, ...
+            save_abs_path, 'peakset_summary_unpaired.csv', ...
+            run_params.density_trap.save_unpaired);
+    else
+        [fname, dir, ~] = uigetfile('../*.*','Select previous curation choice CSV...',' ');
+        dataidx = readmatrix(fullfile(dir, fname));
+        curated = summary_pks(dataidx, :);
+    end
+    
+    % Write curation indices used in this session to CSV
+    writematrix(dataidx, fullfile(save_abs_path, 'curation_index.csv'))
     
     % ---------------- Density trap peak pairing ----------------
     fluid1_datasmr = curated(curated.valve_state == dt.fluid1_vstate, :);
@@ -91,14 +102,32 @@ else
         mass_cal_params.cal_factor_pg_per_hz);
     
     % ---------------- Manual peak curation and data saving ----------------
-    % Curation for forward peaks...
-    curated_fluid1 = curation_handler(run_params, pass_struct_fluid1, ...
-        summary_pks_fluid1, save_abs_path, 'peakset_summary_unpaired_fluid1.csv', ...
-        run_params.density_trap.save_unpaired);
-    % Curation for reverse peaks...
-    curated_fluid2 = curation_handler(run_params, pass_struct_fluid2, ...
-        summary_pks_fluid2, save_abs_path, 'peakset_summary_unpaired_fluid2.csv', ...
-        run_params.density_trap.save_unpaired);
+    % Choose whether to load in a set of curation choices from previous session
+    % or to perform curation from scratch
+    if ~run_params.prefs.load_previous_curation
+        % Curation for forward peaks...
+        [curated_fluid1, dataidx1] = curation_handler(run_params, pass_struct_fluid1, ...
+            summary_pks_fluid1, save_abs_path, 'peakset_summary_unpaired_fluid1.csv', ...
+            run_params.density_trap.save_unpaired);
+        % Curation for reverse peaks...
+        [curated_fluid2, dataidx2] = curation_handler(run_params, pass_struct_fluid2, ...
+            summary_pks_fluid2, save_abs_path, 'peakset_summary_unpaired_fluid2.csv', ...
+            run_params.density_trap.save_unpaired);
+    else
+        disp('Select previous curation choice CSV for forward measurement...')
+        [fname, dir, ~] = uigetfile('../*.*','Select previous curation choice CSV for forward measurement...',' ');
+        dataidx1 = readmatrix(fullfile(dir, fname));
+        curated_fluid1 = summary_pks_fluid1(dataidx1, :);
+
+        disp('Select previous curation choice CSV for backward measurement...')
+        [fname, dir, ~] = uigetfile('../*.*','Select previous curation choice CSV for backward measurement...',' ');
+        dataidx2 = readmatrix(fullfile(dir, fname));
+        curated_fluid2 = summary_pks_fluid2(dataidx2, :);
+    end
+    
+    % Write curation indices used in this session to CSV
+    writematrix(dataidx1, fullfile(save_abs_path, 'curation_index_fwd.csv'))
+    writematrix(dataidx2, fullfile(save_abs_path, 'curation_index_back.csv'))
     
     % ---------------- Density trap peak pairing ----------------
     curated = [curated_fluid1, curated_fluid2];

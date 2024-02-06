@@ -68,9 +68,10 @@ for i = 1:length(paths)
     b.MarkerStyle = 'none';    
     ylabel('Density (g/cm3)')
 
-    p = polyfit(vol_fl, node_dev ./ vol_fl, 1);
+    nv = node_dev ./ vol_fl;
+    p = polyfit(vol_fl, nv, 1);
     fh_fit = figure;
-    scatter(vol_fl, node_dev ./ vol_fl, 'Marker', '.'); hold on;
+    scatter(vol_fl, nv, 'Marker', '.'); hold on;
     plot(vol_fl, polyval(p, vol_fl), 'LineWidth', 2)
     xlabel('Volume (fl)')
     ylabel('Node deviation / volume (fl^-1)')
@@ -78,7 +79,9 @@ for i = 1:length(paths)
     saveas(fh_fit, save_path + labels(i) + "_snacs_fit.jpg")
     
     figure(fh_snacs)
-    snacs = polyval(p, vol_fl);
+    m = p(1);
+    v_ref = median(vol_fl);
+    snacs = nv - m * (v_ref - vol_fl);
     s = swarmchart(categorical(repmat(fig_labels(i), length(snacs), 1)), ...
         snacs, 8, 'filled', 'MarkerFaceAlpha', 0.2, ...
         'MarkerEdgeAlpha',0.2, 'MarkerFaceColor', 'blue', 'MarkerEdgeColor', 'blue');

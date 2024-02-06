@@ -53,11 +53,12 @@ for i = 1:num_particle_groups
     group_logis{i} = dens_logi & vol_logi;
 
     fprintf('\nReference calibration particles:\n');
-    fprintf('    4 um --> 4.000 um\n');
-    fprintf('    6 um --> 6.007 um\n');
-    fprintf('    7 um --> 6.976 um\n');
-    fprintf('    8 um --> 7.979 um\n');
-    fprintf('    9 um --> 8.956 um\n');
+    fprintf('     4 um --> 4.000 um\n');
+    fprintf('     5 um --> 5.000 um\n');
+    fprintf('     6 um --> 6.007 um\n');
+    fprintf('     7 um --> 6.976 um\n');
+    fprintf('     8 um --> 7.979 um\n');
+    fprintf('     9 um --> 8.956 um\n');
     fprintf('    10 um --> 10.12 um\n');
     fprintf('    12 um --> 12.01 um\n');
     fprintf('    15 um --> 14.97 um\n');
@@ -78,7 +79,7 @@ function avg_error = volume_avg_error(paired_data, fl1_ref_freq, ...
         gt_vol = group_vols(j);
         vol_errors(j) = (mean(pd_slice.volume_fl) - gt_vol) ^ 2;
     end
-    avg_error = mean(vol_errors);
+    avg_error = mean(vol_errors .^ 2);
 end
 
 function avg_error = density_avg_error(paired_data, fl1_ref_freq, ...
@@ -92,7 +93,7 @@ function avg_error = density_avg_error(paired_data, fl1_ref_freq, ...
             intercept, slope, mass_cal_factor);
         dens_errors(k) = (mean(pd_slice.density_gcm3) - gt_density) ^ 2;
     end
-    avg_error = mean(dens_errors);
+    avg_error = mean(dens_errors .^ 2);
 end
 
 %% Adjust volume via single-variable optimization of slope
@@ -133,11 +134,14 @@ disp('Plotting unoptimized and optimized volume values...')
 vol_opt_fig = figure;
 subplot(1, 2, 1); 
 scatter(before_opt_paired_data.density_gcm3, before_opt_paired_data.volume_fl)
+hold on; yline(group_vols, LineWidth=2, LineStyle=':')
 title('Before optimization')
 xlabel('Density (g/cm^3)'); ylabel('Volume (fl)');
 before_ylim = ylim;
+
 subplot(1, 2, 2); 
 scatter(paired_data_vol_opt.density_gcm3, paired_data_vol_opt.volume_fl)
+hold on; yline(group_vols, LineWidth=2, LineStyle=':')
 title('After volume optimization')
 xlabel('Density (g/cm^3)'); ylabel('Volume (fl)');
 ylim(before_ylim)
@@ -180,11 +184,16 @@ end
 all_opt_fig = figure;
 subplot(1, 2, 1); 
 scatter(before_opt_paired_data.density_gcm3, before_opt_paired_data.volume_fl)
+hold on; yline(group_vols, LineWidth=2, LineStyle=':')
+xline(gt_density, LineWidth=2, LineStyle=':')
 title('Before optimization')
 xlabel('Density (g/cm^3)'); ylabel('Volume (fl)');
 before_ylim = ylim;
+
 subplot(1, 2, 2); 
 scatter(paired_data_all_opt.density_gcm3, paired_data_all_opt.volume_fl)
+hold on; yline(group_vols, LineWidth=2, LineStyle=':')
+xline(gt_density, LineWidth=2, LineStyle=':')
 title('After density optimization')
 xlabel('Density (g/cm^3)'); ylabel('Volume (fl)');
 ylim(before_ylim);

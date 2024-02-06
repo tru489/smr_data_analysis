@@ -36,7 +36,12 @@ run_params.analysis_params.dispprogress = 0;
 
 %% General peak analysis preferences
 % Manually curate peaks
-run_params.prefs.manual_curation = 0;
+run_params.prefs.manual_curation = 1;
+
+% Option to load curation preferences in from a previous curation session.
+% Requires the same peak selection parameters to be used (i.e. the number
+% of peaks between the previous session and this one must be the same)
+run_params.prefs.load_previous_curation = 0;
 
 %% Mass calibration preferences
 % Save peak summary raw data

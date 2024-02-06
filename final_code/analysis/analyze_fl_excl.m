@@ -46,8 +46,23 @@ if isnan(pkset_summ)
         init_time, cal_params.cal_factor_pg_per_hz);
     
     %% Manual peak curation and data saving 
-    curated = curation_handler(run_params, pass_struct, summary_pks, ...
-        save_abs_path, 'peak_data.csv', run_params.fl_excl.save_peakset_summ);
+    % curated = curation_handler(run_params, pass_struct, summary_pks, ...
+    %     save_abs_path, 'peak_data.csv', run_params.fl_excl.save_peakset_summ);
+
+    % Choose whether to load in a set of curation choices from previous session
+    % or to perform curation from scratch
+    if ~run_params.prefs.load_previous_curation
+        [curated, dataidx] = curation_handler(run_params, pass_struct, summary_pks, ...
+            save_abs_path, 'peak_data.csv', run_params.fl_excl.save_peakset_summ);
+    else
+        [fname, dir, ~] = uigetfile('../*.*','Select previous curation choice CSV...',' ');
+        dataidx = readmatrix(fullfile(dir, fname));
+        curated = summary_pks(dataidx, :);
+    end
+    
+    % Write curation indices used in this session to CSV
+    writematrix(dataidx, fullfile(save_abs_path, 'curation_index.csv'))
+
 else
     curated = pkset_summ;
 end

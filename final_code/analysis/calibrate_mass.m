@@ -26,8 +26,19 @@ save_abs_path = run_params.saving.save_abs_path;
 summary_pks = processed_to_summary(run_params, processed_freq_data, init_time);
 
 %% Manual peak curation and data saving
-curated = curation_handler(run_params, pass_struct, summary_pks, ...
-    save_abs_path, 'peakset_summary.csv', 0);
+% Choose whether to load in a set of curation choices from previous session
+% or to perform curation from scratch
+if ~run_params.prefs.load_previous_curation
+    [curated, dataidx] = curation_handler(run_params, pass_struct, summary_pks, ...
+        save_abs_path, 'peakset_summary.csv', 0);
+else
+    [fname, dir, ~] = uigetfile('../*.*','Select previous curation choice CSV...',' ');
+    dataidx = readmatrix(fullfile(dir, fname));
+    curated = summary_pks(dataidx, :);
+end
+
+% Write curation indices used in this session to CSV
+writematrix(dataidx, fullfile(save_abs_path, 'curation_index.csv'))
 
 analyze_mass_cal(run_params, curated, save_abs_path, formatted_date)
 param_log(run_params, save_abs_path)

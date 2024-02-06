@@ -77,6 +77,7 @@ rel_water_content = (cell_total_volume_fl_temp - cell_dry_volume_fl_temp) / cell
 cell_radius_m = (3 * cell_total_volume_fl_temp / (4 * pi)) ^ (1/3) * 1e-6; % m
 
 %% Generate noise term
+disp('Sampling SMR noise from empirical data...')
 % Colornoise_2 = dsp.ColoredNoise(alpha_factor, total_datapoints, ...
 %     'OutputDataType', 'double');
 % target_noise_Hz = noise_level;

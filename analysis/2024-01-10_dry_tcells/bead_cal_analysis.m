@@ -6,7 +6,7 @@ p_summ = readtable(pair_path);
 
 % density_gate = p_summ.density_gcm3 > 1.0 & p_summ.density_gcm3 < 1.62;
 % volume_gate = p_summ.density_gcm3 > 1.0 & p_summ.density_gcm3 < 1.5;
-p_summ = p_summ(density_gate, :);
+% p_summ = p_summ(density_gate, :);
 
 f1 = figure;
 s = scatter(p_summ.density_gcm3, p_summ.volume_fl, 25, 'blue', 'filled');

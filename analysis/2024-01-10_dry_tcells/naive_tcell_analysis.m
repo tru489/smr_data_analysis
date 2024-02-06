@@ -66,6 +66,15 @@ for i = 1:2
     [~, p_val] = ttest2(dry_mass_small, dry_mass_large);
     fprintf('Two-tailed T-test: p = %e\n', p_val)
 
+    f6 = figure;
+    s = scatter(small_cells.fl1_mass_pg, small_cells.density_gcm3, 25, 'blue', 'filled', 'DisplayName', 'Small T-Cells');
+    s.MarkerFaceAlpha = 0.5;
+    hold on;
+    s = scatter(large_cells.fl1_mass_pg, large_cells.density_gcm3, 25, 'red', 'filled', 'DisplayName', 'Large T-Cells');
+    s.MarkerFaceAlpha = 0.5;
+    xlabel('Buoyant mass (pg)'); ylabel('Dry density (g/cm3)'); 
+    saveas(f6, fullfile(save_path, "bmdens_scatter_" + labels{i} + ".jpg"))
+
 
     
     

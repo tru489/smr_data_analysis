@@ -20,8 +20,7 @@ n_particles = 66; % Number of particles measured
 % Forward measurement
 fwd_pk_arrival_frac = [0.5]; % percent; percent of total search time at which particle appears
 fwd_search_time = 1.5; % s; time taken to seek new particle
-% fwd_pk_width = [420]; % datapoints; peak width
-fwd_pk_width = [normrnd(396.30, 5.75, [2000,1]); normrnd(419.14, 5.77, [2000,1])];
+fwd_pk_width = [normrnd(396.30, 5.75, [2000,1]); normrnd(419.14, 5.77, [2000,1])]; % datapoints; peak width
 
 %% Fluid physical properties
 % Water density and dynamic viscosity
