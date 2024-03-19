@@ -1,0 +1,39 @@
+for i = 1:length(group_indices)
+    pair_flag = 1;
+    prev_idx = group_indices(i) - 1;
+    forward_idx = group_indices(i);
+    backward_idx = group_indices(i) + 1;
+    next_idx = group_indices(i) + 2;
+
+    % Check if there are consecutive forward peaks within a specified time
+    % window
+    if prev_idx >= 1
+        if vstates(prev_idx) == f1_vstate && times(forward_idx) - times(prev_idx) < min_forward_gap
+            pair_flag = 0;
+        end
+    end
+
+    % Check if there are consecutive backward peaks within a specified time
+    % window
+    if next_idx <= length(vstates)
+        if vstates(next_idx) == f2_vstate && (times(next_idx) - times(forward_idx)) < max_time_fl1_fl2
+            pair_flag = 0;
+        end
+    end
+
+    % Check if the time gap between the forward and backward peaks is too
+    % large
+    if times(backward_idx) - times(forward_idx) > max_time_fl1_fl2
+        pair_flag = 0;
+    end
+    
+    if pair_flag
+        pairable_indices(2*i-1:2*i) = [forward_idx, backward_idx];
+        pair_id_arr(2*i-1:2*i) = [pair_id, pair_id];
+        pair_id = pair_id + 1;
+    end
+end
+pairable_indices = pairable_indices(~isnan(pairable_indices));
+paired_datasmr = sorted_full(pairable_indices, :);
+paired_datasmr.pair_id = pair_id_arr(~isnan(pair_id_arr));
+num_pairs = pair_id - 1;

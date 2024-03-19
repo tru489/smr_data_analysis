@@ -135,10 +135,14 @@ while repeatflag
         end
 
         if mod(length(peaks), 3) ~= 0 
-            disp(['Warning: the number of peaks found is not a multiple ' ...
-                'of three. Check plot.'])
+            if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+                disp(['Warning: the number of peaks found is not a multiple ' ...
+                    'of three. Check plot.'])
+            end
             if length(peaks) == 1
-                disp('Skipping this peak set. There is only one peak..');
+                if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+                    disp('Skipping this peak set. There is only one peak..');
+                end
                 peaks = [];
                 repeatflag = 0;
             end
@@ -153,15 +157,18 @@ while repeatflag
         end
         
     elseif isempty(pkidx)
-        figure(1);
-        hold off;
 
-        % Plot frequency data from this peak segment
-        subplot(2,2,3); plot(xdata, ydata, '-');
-        hold on
-        set(gca,'XLim',[0 length(xdata)]);
-        set(gca,'YLim',[min(ydata) - 10 max(ydata) + 10]);
-        disp('No peaks were found. Please adjust threshold baseline.')
+        if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+            figure(1);
+            hold off;
+
+            % Plot frequency data from this peak segment
+            subplot(2,2,3); plot(xdata, ydata, '-');
+            hold on
+            set(gca,'XLim',[0 length(xdata)]);
+            set(gca,'YLim',[min(ydata) - 10 max(ydata) + 10]);
+            disp('No peaks were found. Please adjust threshold baseline.')
+        end
         peaks = [];
         repeatflag = 0;
     end

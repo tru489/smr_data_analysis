@@ -119,10 +119,6 @@ gen_fig_ppt(run_params, stats_cell, fig_path_cell, ppt_filename, presentation_ti
     save_abs_path)
 
 
-
-
-
-
 disp_dir_link(run_params.saving.save_abs_path)
 param_log(run_params, run_params.saving.save_abs_path)
 

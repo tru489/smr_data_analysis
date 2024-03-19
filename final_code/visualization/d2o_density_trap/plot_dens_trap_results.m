@@ -57,9 +57,9 @@ i = i + 1;
 % i = i + 1;
 
 %% Scatter histogram chart of dry density and dry volume
-dens_vs_vol_scatter_histo = plot_scatter_histogram(density_trap_summary, ...
-    'density_gcm3', 'volume_fl', 'Density (g/cm^3)', 'Volume (fl)', ...
-    fig_visibility);
+dens_vs_vol_scatter_histo = figure(Visible='off');
+plot_scatter_histogram(dens_vs_vol_scatter_histo, density_trap_summary, ...
+    'density_gcm3', 'volume_fl', 'Density (g/cm^3)', 'Volume (fl)');
 
 dens_vol_scatter_hist_path = fullfile(fig_path, 'dens_vs_vol_scatterhisto.jpg');
 saveas(dens_vs_vol_scatter_histo, dens_vol_scatter_hist_path)
@@ -99,9 +99,10 @@ fig_path_cell{i} = fl2_hist_path;
 i = i + 1;
 
 %% Scatter histogram chart of forward and back peaks
-fwd_back_scatter_histo = plot_scatter_histogram(density_trap_summary, ...
+fwd_back_scatter_histo = figure(Visible='off');
+plot_scatter_histogram(fwd_back_scatter_histo, density_trap_summary, ...
     'fl1_mass_pg', 'fl2_mass_pg', 'Buoyant mass in fluid 1 (pg)', ...
-    'Buoyant mass in fluid 2 (pg)', fig_visibility);
+    'Buoyant mass in fluid 2 (pg)');
 
 dens_vol_scatter_hist_path = fullfile(fig_path, 'fl1_fl2_scatterhisto.jpg');
 saveas(fwd_back_scatter_histo, dens_vol_scatter_hist_path)

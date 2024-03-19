@@ -54,8 +54,10 @@ end
 % Provide a fit of the baseline for this peakset and subtract away
 % from frequency
 if string(class(run_params.backend.baseline_fit_type)) == "double"
-    if run_params.backend.use_node_bl_fit
+    if run_params.backend.use_node_bl_fit && run_params.backend.node_bl_weight > 0
+        peakwidth = peaks(end) - peaks(1);
         an_weight = run_params.backend.node_bl_weight;
+        an_weight = round(peakwidth * an_weight);
         start_add_idx = length(xbasedata) + 1;
         xbasedata_mod = xbasedata;
         xbasedata_mod(start_add_idx:start_add_idx+length(antipeaks)*an_weight-1) = ...
@@ -215,7 +217,9 @@ htdiff_poly = mean(apkht_poly([1 end]));
 % ahtdiff_poly = 100*abs(diff(apkht_poly([1 end])))/mean(apkht_poly([1 end]));
 ahtdiff_poly = hahtwd_rr - hahtwd_ll;   % FWHM
 
-hold off
+if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+    hold off
+end
 
 peak_fit_metrics.pkidx_poly = pkidx_poly;
 peak_fit_metrics.pkht_poly = pkht_poly;

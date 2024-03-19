@@ -30,42 +30,49 @@ density = input('Density of calibration particle (g/cm^3)? : ');
 
 fprintf('\nReference fluid densities:\n');
 fprintf('    Water (25C) --> 0.997 g/cm^3\n');
-fprintf('    1x PBS (25C) --> 1.00 g/cm^3\n');
+fprintf('    1x PBS (25C) --> 1.0056 g/cm^3\n');
 fl_density = input('Fluid density (g/cm^3)? : ');
 
-flag2 = 1;
-while flag2
-    plt_opt = input('Remove outliers in plot (y/n)? : ', 's');
-    if lower(plt_opt) == 'y'
-        fig1 = figure;
-        histogram(rmoutliers(freqs), 100)
-        xlabel('Frequency Difference (Hz)')
-        ylabel('Count')
-        flag2 = 0;
-    elseif lower(plt_opt) == 'n'
-        fig1 = figure;
-        histogram(freqs, 100)
-        xlabel('Frequency Difference (Hz)')
-        ylabel('Count')
-        flag2 = 0;
-    else
-        fprintf('Invalid input.\n')
-    end
-end
+fig1 = figure;
+histogram(freqs, 300)
+xlabel('Frequency Difference (Hz)')
+ylabel('Count')
+
+% flag2 = 1;
+% while flag2
+%     plt_opt = input('Remove outliers in plot (y/n)? : ', 's');
+%     if lower(plt_opt) == 'y'
+%         fig1 = figure;
+%         histogram(rmoutliers(freqs), 300)
+%         xlabel('Frequency Difference (Hz)')
+%         ylabel('Count')
+%         flag2 = 0;
+%     elseif lower(plt_opt) == 'n'
+%         fig1 = figure;
+%         histogram(freqs, 300)
+%         xlabel('Frequency Difference (Hz)')
+%         ylabel('Count')
+%         flag2 = 0;
+%     else
+%         fprintf('Invalid input.\n')
+%     end
+% end
 
 input('Continue? (press enter)');
+xlim_sel = xlim;
+histogram(freqs(freqs > xlim_sel(1) & freqs < xlim_sel(2)), 200)
 
-fprintf('Select frequency gate for particles of interest...\n')
-fprintf('Select left boundary...\n')
-[x_left, ~] = ginput(1);
-
-fprintf('Select right boundary...\n')
-[x_right, ~] = ginput(1);
+disp('Select left and right boundaries...')
+[vol_gate, ~] = ginput(2);
+if vol_gate(1) > vol_gate(2)
+    vol_gate = vol_gate(end:-1:1);
+end
+x_left = vol_gate(1); x_right = vol_gate(2);
 close(fig1)
 
 freq_gated = freqs((freqs > x_left) & (freqs < x_right));
 fig2 = figure; 
-histogram(freq_gated, 50)
+histogram(freq_gated, 150)
 title('Gated frequency range')
 xlabel('Frequency Difference (Hz)')
 ylabel('Count')
@@ -78,7 +85,7 @@ avg_freq = mean(freq_gated);
 cal_factor = gt_mass / avg_freq; % pg/Hz
 cal_freqs = freq_gated * cal_factor;
 
-fprintf('\n-------------------------------------------------------------')
+fprintf('\n-------------------------------------------------------------\n')
 fprintf('Ground truth particle buoyant mass: %f pg\n', gt_mass)
 fprintf('Average frequency difference: %f Hz\n', avg_freq)
 

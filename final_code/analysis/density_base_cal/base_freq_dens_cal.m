@@ -7,8 +7,6 @@ function base_freq_dens_cal(run_params)
 % Arguments:
 %   run_params (struct): running parameters for analysis
 
-chip_id = input('Input chip ID: ', 's');
-
 % Get calibration file
 disp("Getting density baseline calibration data...")
 [path, dir, ind] = uigetfile('../*.csv', ...
@@ -67,7 +65,6 @@ saveas(delay_fh, fullfile(save_dir, 'dens_cal_delay.jpg'))
 formatted_date = get_creation_date(fullfile(dir, path));
 
 % Write values to json for future use
-st.chip_id = chip_id;
 st.date = formatted_date;
 st.slope = b(2) * 1e6;
 st.intercept = b(1) * 1e6;

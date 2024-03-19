@@ -103,8 +103,10 @@ end
 if length(peak_idx) > 1
     segmentbound = S1_get_seg_bound(peak_idx, xdata);
     
-    set(gca,'XLim',[0 length(xdata)]);
-    set(gca,'YLim',[min(ydata) - 10 max(ydata) + 10]);
+    if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+        set(gca,'XLim',[0 length(xdata)]);
+        set(gca,'YLim',[min(ydata) - 10 max(ydata) + 10]);
+    end
 else
     disp('size of peak_idx is smaller than 2')
     pk_data = zeros(13,1); 
@@ -112,7 +114,9 @@ else
     return;
 end
 
-disp('Beginning individual peak analysis.')
+if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+    disp('Beginning individual peak analysis.')
+end
 
 % Lower threshold to half-length (in datapoints) of data segment 
 % surrounding a single peak
@@ -149,7 +153,9 @@ for i = 1:length(peak_idx)
         
         % Identify primary and secondary peak apex indices within 
         % segment
-        disp('Locating segment peaks...')
+        if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+            disp('Locating segment peaks...')
+        end
         peaks = S2_PeaksetFinder(run_params, local_xdata, local_ydata, ...
             offset_input, baseparams);
         
@@ -157,8 +163,10 @@ for i = 1:length(peak_idx)
             % Distances (idx) between first and last of three 2nd mode
             % peaks
             peakdist_temp = peaks(end) - peaks(1);
-
-            disp('Identifying baseline...')
+            
+            if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+                disp('Identifying baseline...')
+            end
             
             [left_base, right_base, edgeidx] = ...
                 S2_BaselineFinder(run_params, local_xdata, ...
@@ -188,7 +196,9 @@ for i = 1:length(peak_idx)
             
                 % Perform polynomial fits to refine peak location and 
                 % to measure peak height
-                disp('Performing polynomial fit on segment peaks...')
+                if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+                    disp('Performing polynomial fit on segment peaks...')
+                end
                 peak_fit_metrics = S2_PeakFitter(run_params, ...
                     pk_xdata, pk_ydata, local_baseline, local_peaks, ...
                     local_peakwidth);
@@ -228,14 +238,16 @@ for i = 1:length(peak_idx)
                 pass_struct.sample_baseline_fits = ...
                     [pass_struct.sample_baseline_fits fit_baseline ...
                     nan i sectionnumber];
-    
-                fprintf('------- Data segment %1.0f ------ \n', ...
-                    sectionnumber);
-                fprintf('Peak segment %1.0f\n', i);
-                fprintf('Baseline slope: %1.5f \n', local_baselineslope);
-                fprintf('2nd mode %%diff: %1.5f \n', local_htdiff_poly);
-                fprintf('-------------------------- \n')
-                disp(' ')
+                
+                if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+                    fprintf('------- Data segment %1.0f ------ \n', ...
+                        sectionnumber);
+                    fprintf('Peak segment %1.0f\n', i);
+                    fprintf('Baseline slope: %1.5f \n', local_baselineslope);
+                    fprintf('2nd mode %%diff: %1.5f \n', local_htdiff_poly);
+                    fprintf('-------------------------- \n')
+                    disp(' ')
+                end
     
                 %% Peak metrics
                 % Index of each peak and antipeak within each peakset, 
@@ -390,10 +402,14 @@ for i = 1:length(peak_idx)
                 end
             end
         else
-            disp('Number of peaks in this segment is not 3');
+            if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+                disp('Number of peaks in this segment is not 3');
+            end
         end
     else
-       disp('Segment too short for baseline selection');
+       if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+            disp('Segment too short for baseline selection');
+       end
     end
 end
 
@@ -431,7 +447,9 @@ if (~isempty(pk_t))
     pk_data(12,:) = pkorder;
     pk_data(13,:) = valve_state(pkidx_poly);
 else
-    disp('No acceptable peak found in this section');
+    if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+        disp('No acceptable peak found in this section');
+    end
     pk_data = zeros(13,1);
 end
 

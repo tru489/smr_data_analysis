@@ -34,8 +34,10 @@ arguments
     inv_peaks = 0
 end
 
-scrsize = get(0, 'Screensize');
-figure('OuterPosition',[0 0.05 * scrsize(4) scrsize(3) 0.95 * scrsize(4)])
+if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+    scrsize = get(0, 'Screensize');
+    figure('OuterPosition',[0 0.05 * scrsize(4) scrsize(3) 0.95 * scrsize(4)])
+end
 
 % Number of segments in frequency data
 num_segments = get_num_segments(freqfile);
@@ -77,7 +79,10 @@ while(1)
         valve_state = zeros(size(freq));
     end
     
-    fprintf('\nProcessing segment %d of %d...\n', i, num_segments)
+    if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+        fprintf('    Processing segment %d of %d...\n', i, num_segments)
+    end
+
     if inv_peaks
         [datalast, pass_struct] = S1_PeakAnalysis_time(freq, time, ...
             valve_state, datafull, i, run_params, pass_struct);
@@ -97,14 +102,16 @@ while(1)
         else
             fig_visibility = 'off';
         end
-        fh = figure('OuterPosition', ...
-            [0 0.05*scrsize(4) scrsize(3) 0.95*scrsize(4)], ...
-            'visible', fig_visibility);
-        plot(datafull(1,:), datafull(2,:), '.b')
-        title('Frequency Data');
-        xlabel('Time (s)')
-        ylabel('Frequency (Hz)')
-        saveas(fh, fullfile(run_params.saving.save_abs_path, "pk_heights.jpg"));
+        if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+            fh = figure('OuterPosition', ...
+                [0 0.05*scrsize(4) scrsize(3) 0.95*scrsize(4)], ...
+                'visible', fig_visibility);
+            plot(datafull(1,:), datafull(2,:), '.b')
+            title('Frequency Data');
+            xlabel('Time (s)')
+            ylabel('Frequency (Hz)')
+            saveas(fh, fullfile(run_params.saving.save_abs_path, "pk_heights.jpg"));
+        end
         break
     end
 end

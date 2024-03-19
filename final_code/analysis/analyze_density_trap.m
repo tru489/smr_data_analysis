@@ -127,9 +127,9 @@ else
     writematrix(dataidx2, fullfile(save_abs_path, 'curation_index_back.csv'))
     
     % ---------------- Density trap peak pairing ----------------
-    fluid1_datasmr = curated_fluid1(curated_fluid1.valve_state == dt.fluid1_vstate);
+    fluid1_datasmr = curated_fluid1(curated_fluid1.valve_state == dt.fluid1_vstate, :);
     fluid1_pk_direct = 1;
-    fluid2_datasmr = curated_fluid2(curated_fluid2.valve_state == dt.fluid2_vstate);
+    fluid2_datasmr = curated_fluid2(curated_fluid2.valve_state == dt.fluid2_vstate, :);
     fluid2_pk_direct = -1;
     paired_datasmr = pair_density_trap(run_params, fluid1_datasmr, ...
         fluid1_pk_direct, fluid2_datasmr, fluid2_pk_direct, cal_params, ...

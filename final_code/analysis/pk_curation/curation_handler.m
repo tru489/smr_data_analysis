@@ -19,8 +19,9 @@ sampletime = pass_struct.sampletime;
 sample_baseline_fits = pass_struct.sample_baseline_fits;
 
 if run_params.prefs.manual_curation
-    [curated, dataidx] = manual_pk_curation(run_params, samplepeak, ...
+    [curated, dataidx, curation_log] = manual_pk_curation(run_params, samplepeak, ...
         sampletime, sample_baseline_fits, summary_pks);
+    save(fullfile(save_abs_path, 'curation_log.mat'), "curation_log")
 else
     if run_params.curation.auto_rejection
         % Despite no manual curation, still auto-reject peaks
@@ -34,7 +35,9 @@ else
 end
 
 if save_file
-    writetable(curated, fullfile(save_abs_path, file_name))
+    curated_reformat = curated;
+    curated_reformat.real_time_s = cellfun(@(x) num2str(x, '%.5f'), num2cell(curated_reformat.real_time_s), 'UniformOutput', 0);
+    writetable(curated_reformat, fullfile(save_abs_path, file_name))
 end
 
 end

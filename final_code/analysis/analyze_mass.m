@@ -18,13 +18,34 @@ timefile = parsed_files.smr_time_id;
 vsfile = parsed_files.vs_id;
 mass_cal_params = parsed_files.mass_cal;
 
+%% Ask user whether peaks are inverted
+flag = 1;
+while flag
+    peak_reversal = input('Are peaks inverted? (y/n): ', 's');
+    if lower(peak_reversal) == 'y'
+        flag = 0;
+        rev_peaks_invert = 1;
+    elseif lower(peak_reversal) == 'n'
+        flag = 0;
+        rev_peaks_invert = 0;
+    else
+        disp('Invalid input.')
+    end
+end
+
 %% Add file to save processed data
 run_params.saving.save_abs_path = create_results_dir(run_params, data_dir);
 save_abs_path = run_params.saving.save_abs_path;
 
 %% Analyze frequency data to get peaks
-[processed_freq_data, pass_struct, init_time] = analyze_freq_data(run_params, ...
-    freqfile, timefile, vsfile);
+if ~rev_peaks_invert
+    [processed_freq_data, pass_struct, init_time] = analyze_freq_data(run_params, ...
+        freqfile, timefile, vsfile);
+else
+    [processed_freq_data, pass_struct, init_time] = analyze_freq_data(run_params, ...
+        freqfile, timefile, vsfile, 1);
+end
+
 summary_pks = processed_to_summary(run_params, processed_freq_data, init_time, ...
     mass_cal_params.cal_factor_pg_per_hz);
 
@@ -40,6 +61,7 @@ else
     [fname, dir, ~] = uigetfile('../*.*','Select previous curation choice CSV...',' ');
     dataidx = readmatrix(fullfile(dir, fname));
     curated = summary_pks(dataidx, :);
+    writetable(curated, fullfile(save_abs_path, strcat(path_list{end-1}, '_', path_list{end}, '.csv')))
 end
 
 % Write curation indices used in this session to CSV

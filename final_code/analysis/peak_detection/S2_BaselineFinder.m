@@ -83,7 +83,9 @@ while ~exitflag
     right_edge_thresh_logi = ...
         find((diff(ydata(rightedgesearch))) > edgethres, 1);
     if isempty(left_edge_thresh_logi) || isempty(right_edge_thresh_logi)
-        disp('Skipping this peakset; no proper edge found')
+        if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+            disp('Skipping this peakset; no proper edge found')
+        end
         left_base = [];
         right_base = [];
         edgeidx = [];
@@ -109,13 +111,8 @@ while ~exitflag
         edgeidx(2) = rightedgesearch(idx_idx2);
     
         % Slice out large baseline segments to the left and right of peakset
-        if run_params.backend.shorter_baseline
-            sidelength = round(2 * 0.25 * peakdist);
-            offset_length = 25;
-        else
-            sidelength = round(4 * 0.25 * peakdist); 
-            offset_length = 30; 
-        end
+        sidelength = round(run_params.backend.sidelength_coef * peakdist);
+        offset_length = run_params.backend.offset_length;
         
         left_base = max(edgeidx(1) - sidelength - offset_length, 1):1: ...
             edgeidx(1) - offset_length;
@@ -160,7 +157,9 @@ while ~exitflag
     end
     
     if(isempty(left_base) || isempty(right_base))
-        disp('Skipping this peakset...')
+        if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+            disp('Skipping this peakset...')
+        end
         left_base = [];
         right_base = [];
         edgeidx = [];

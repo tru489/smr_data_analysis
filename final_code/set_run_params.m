@@ -27,16 +27,24 @@ run_params.analysis_type.density_trap = 0;
 % fluids/time/fluorescence data)
 run_params.analysis_type.water_content = 0;
 
-%% Analysis mode (for all analysis types)
+%% Analysis mode
 % Use rapid analysis mode; false stops at each peak, true runs through all peaks
 run_params.analysis_params.analysismode = 1;
 % Display progress with plots. If rapid analysis mode is not used, this
 % defaults to true
 run_params.analysis_params.dispprogress = 0;
 
+% Use rapid analysis mode for pmt analysis code
+run_params.analysis_params.analysismode_pmt = 1;
+% Display progress with plots for pmt analysis
+run_params.analysis_params.dispprogress_pmt = 0;
+
+% Display intermediate plots/print statements in fast mode?
+run_params.analysis_params.verbose = 0;
+
 %% General peak analysis preferences
 % Manually curate peaks
-run_params.prefs.manual_curation = 1;
+run_params.prefs.manual_curation = 0;
 
 % Option to load curation preferences in from a previous curation session.
 % Requires the same peak selection parameters to be used (i.e. the number
@@ -53,11 +61,17 @@ run_params.mass_cal.save_peak_summary = 1;
 run_params.density_trap.fluid1_vstate = 11;
 run_params.density_trap.fluid2_vstate = 7;
 
-% Maximum time gap between peaks in fluid 1 and fluid 2
-run_params.density_trap.max_time_gap = 10000; % ms
+% Maximum backflush time allowed for reverse peaks to arrive
+run_params.density_trap.max_time_gap = 9000; % m
 
-% Minimum time gap between adjacent forward peaks
-run_params.density_trap.min_forward_gap = 100; % ms
+% Maximum time gap between adjacent forward peaks
+run_params.density_trap.min_forward_gap = 4000; % ms
+
+% Use multiple bead pairing to pair multiple beads within a single trap
+% (using above thresholding)
+run_params.density_trap.use_multi_bead_pair = 1;
+% Density range in which paired forward and reverse peaks are acceptable
+run_params.density_trap.candidate_pair_dens_window = [1.044, 1.056]; % g/cm3
 
 % Whether or not to save unpaired data
 run_params.density_trap.save_unpaired = 1;
@@ -185,7 +199,7 @@ run_params.fl_excl.thresh_base_height_range = 0.05;
 % Use calibration with coulter counter data, or use manually input
 % parameter?
 run_params.fl_excl.use_coulter_calibration = 0;
-run_params.fl_excl.manual_fl_per_au_cal_factor = 16.710185712;
+run_params.fl_excl.manual_fl_per_au_cal_factor = 14.0306;
 
 %% Visualization preferences
 % Create matlab figure windows when analysis is complete

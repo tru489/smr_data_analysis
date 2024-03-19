@@ -1,4 +1,4 @@
-function [datasmr_processed, dataidx] = manual_pk_curation(run_params, samplepeak, ...
+function [datasmr_processed, dataidx, curation_log] = manual_pk_curation(run_params, samplepeak, ...
     sampletime, sample_baseline_fits, datasmr)
 % Manual peak curation for frequency data
 % 
@@ -75,6 +75,8 @@ fh = figure('OuterPosition', [0 0.05*scrsize(4) scrsize(3) 0.95*scrsize(4)]);
 exit_flag = 0;
 i = 0;
 
+curation_log = [];
+
 manual_exit_flag = 0;
 while i < length(idx0)
     i=i+1;
@@ -135,6 +137,13 @@ while i < length(idx0)
             end
 
             dataidx = [dataidx tempidx];
+            
+            temp_st.freq = peak; 
+            if run_params.curation.disp_bl_fit
+                temp_st.bl_fit = bl_fit;
+            end
+            temp_st.status = 1;
+            curation_log = [curation_log, temp_st];
         elseif evaluate_fit == 'x' % Exit from the aligner routine
             exit_flag = 1;
             manual_exit_flag = 1;
@@ -154,6 +163,13 @@ while i < length(idx0)
                 length(find(Peak.process == 2)), Peak.count);
             disp('------------------------------------------------------');
             skip = 1;
+
+            temp_st.freq = peak; 
+            if run_params.curation.disp_bl_fit
+                temp_st.bl_fit = bl_fit;
+            end
+            temp_st.status = 0;
+            curation_log = [curation_log, temp_st];
         end
     end
 end

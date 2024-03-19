@@ -43,8 +43,8 @@ if fxm_mode == 1
     end
 end
 
-analysis_mode = run_params.analysis_params.analysismode;
-disp_progress = run_params.analysis_params.dispprogress;
+analysis_mode = run_params.analysis_params.analysismode_pmt;
+disp_progress = run_params.analysis_params.dispprogress_pmt;
 
 %% ---------------- Runtime Display settings ----------------- %%
 if disp_progress
@@ -119,6 +119,7 @@ while ~flag
 end
 
 %% Quality check to remove low-quality signals
+% full_readout_pmt = full_readout_pmt([1:3300, 4.72e4:49386],:);
 if fxm_mode == 1
     non_nan_ind = find(~isnan(full_readout_pmt.baseline(:,fxm_channel)));
     base_med = median(full_readout_pmt.baseline(non_nan_ind(1:round(length(non_nan_ind)*0.3)),fxm_channel));
@@ -234,7 +235,7 @@ scatter(full_readout_pmt.time_of_detection(cell_pass_ind), ...
 xlabel('Time')
 ylabel('FXM baseline (V)')
 legend(["All particles","Pass QC"],'Location','southoutside','Orientation','horizontal')
-print(gcf,'FXM baseline vs time QC check.png','-dpng','-r1200')
+print(gcf,fullfile(run_params.saving.save_abs_path, 'FXM baseline vs time QC check.png'),'-dpng','-r1200')
 
 end
 

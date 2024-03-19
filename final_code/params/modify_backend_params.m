@@ -25,13 +25,17 @@ if is_density_trap
     % factor which node terms are multiplied by in linear regression error
     % function
     run_params.backend.node_bl_weight = 1;
+    
     % Does not use a polynomial fit on antipeaks in peak fitter (perhaps not 
     % crucial)
-    
     run_params.backend.antipeak_polyfit = 0;
+    
     % Acquire a shorter baseline segment around each peakset for density 
     % trapping in order to better fit a quadratic baseline
-    run_params.backend.shorter_baseline = 1;
+    run_params.backend.sidelength_coef = 2*0.25;
+    run_params.backend.offset_length = 25;
+
+
     % Change the edge indices chosen for each peakset to for density
     % trapping to better fit quadratic baseline
     run_params.backend.adjusted_edge_indices = 1;
@@ -52,7 +56,11 @@ else
     run_params.backend.node_bl_weight = 1;
 
     run_params.backend.antipeak_polyfit = 1;
-    run_params.backend.shorter_baseline = 0;
+
+    % Acquire a longer baseline segment around each peakset
+    run_params.backend.sidelength_coef = 4*0.25;
+    run_params.backend.offset_length = 30;
+
     run_params.backend.adjusted_edge_indices = 0;
     run_params.backend.alternative_smoothing = 0;
     run_params.backend.compensate_baseline_fluct = 0;

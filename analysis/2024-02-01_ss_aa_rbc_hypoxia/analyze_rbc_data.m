@@ -26,13 +26,59 @@ for i = 1:length(data_paths)
     add_swarmchart(fh_mass, labels_arr(i), data_sl.mass_pg)
     add_swarmchart(fh_nd, labels_arr(i), ndev_sl)
 
-    fh_temp = figure;
+    fh_temp_1 = figure;
     s = scatter(data_sl.mass_pg(ndev_gate), ndev_sl, 25, 'b', 'filled', 'o');
     xlabel('Buoyant mass (pg)'); ylabel('Node deviation (Hz)');
     title(labels_arr(i))
     s.MarkerFaceAlpha = 0.3;
-    saveas(fh_temp, "C:\thomasu\smr_data_analysis\analysis\2024-02-01_ss_aa_rbc_hypoxia\fig\bm_nd_scatter_" + file_label_arr(i) + ".jpg")
+    saveas(fh_temp_1, "C:\thomasu\smr_data_analysis\analysis\2024-02-01_ss_aa_rbc_hypoxia\fig\bm_nd_scatter_" + file_label_arr(i) + ".jpg")
+
+
+    fh_temp_2 = figure;
+    first_mass = data_sl.mass_pg(1:round(length(data_sl.mass_pg) / 3));
+    last_mass = data_sl.mass_pg(2 * round(length(data_sl.mass_pg) / 3):end);
+    [N, edges] = histcounts(first_mass, 'BinWidth', 0.3);
+    histogram('BinEdges', edges, 'BinCounts', N / sum(N), 'FaceColor', 'blue', 'FaceAlpha', 0.2, 'EdgeAlpha', 0.2, 'DisplayName', 'First 30% of measurements')
+    hold on;
+    [N, edges] = histcounts(last_mass, 'BinWidth', 0.3);
+    histogram('BinEdges', edges, 'BinCounts', N / sum(N), 'FaceColor', 'red', 'FaceAlpha', 0.2, 'EdgeAlpha', 0.2, 'DisplayName', 'Last 30% of measurements')
+    legend('Location', 'northoutside')
+    xlabel('Buoyant mass (pg)'); ylabel('Probability Density'); 
+    title(labels_arr(i))
+    saveas(fh_temp_2, "C:\thomasu\smr_data_analysis\analysis\2024-02-01_ss_aa_rbc_hypoxia\fig\time_dens_" + file_label_arr(i) + ".jpg")
 end
+
+h2o_path = "A:\thomasu\raw_data\2024-02-07\5-12um_beads_h2o_pbs\20240208.085026_mass_results\2024-02-07_5-12um_beads_h2o_pbs.csv";
+h2o_tab = readtable(h2o_path);
+tab_6um = h2o_tab(h2o_tab.mass_pg > 5 & h2o_tab.mass_pg < 7, :);
+tab_8um = h2o_tab(h2o_tab.mass_pg > 12 & h2o_tab.mass_pg < 16, :);
+add_swarmchart(fh_nd, "6 um polystyrene beads", tab_6um.node_dev_mean)
+add_swarmchart(fh_nd, "8 um polystyrene beads", tab_8um.node_dev_mean)
+
+fh_temp_1 = figure;
+s = scatter(tab_6um.mass_pg, tab_6um.node_dev_mean, 25, 'b', 'filled', 'o');
+xlabel('Buoyant mass (pg)'); ylabel('Node deviation (Hz)');
+title('6 um polystyrene beads')
+s.MarkerFaceAlpha = 0.3;
+saveas(fh_temp_1, "C:\thomasu\smr_data_analysis\analysis\2024-02-01_ss_aa_rbc_hypoxia\fig\bm_nd_scatter_6um_bead.jpg")
+
+fh_temp_1 = figure;
+s = scatter(tab_8um.mass_pg, tab_8um.node_dev_mean, 25, 'b', 'filled', 'o');
+xlabel('Buoyant mass (pg)'); ylabel('Node deviation (Hz)');
+title('8 um polystyrene beads')
+s.MarkerFaceAlpha = 0.3;
+saveas(fh_temp_1, "C:\thomasu\smr_data_analysis\analysis\2024-02-01_ss_aa_rbc_hypoxia\fig\bm_nd_scatter_8um_bead.jpg")
+
+
+
+
+
+
+
+
+
+
+
 
 figure(fh_mass)
 ylabel('Buoyant mass (pg)'); xline(2.5, LineWidth=1.5, Color='k');
