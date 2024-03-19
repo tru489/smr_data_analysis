@@ -1,6 +1,6 @@
 function paired_datasmr = run_single_search(run_params, file_selection, ...
     bin_dir_path, fl1_ref_freq, fl2_ref_freq, rev_peaks_invert, ...
-    dataidx1, dataidx2)
+    fwd_arr_t, back_arr_t)
 
 %% Unload parameters
 % Density trap params
@@ -30,9 +30,7 @@ if ~rev_peaks_invert
         analyze_freq_data(run_params, freqfile, timefile, vsfile);
     summary_pks = processed_to_summary(run_params, processed_freq_data, ...
         init_time, cal_params.cal_factor_pg_per_hz);
-    
-    % ---------------- Manual peak curation and data saving ----------------
-    curated = summary_pks(dataidx, :);
+   
     
     % ---------------- Density trap peak pairing ----------------
     fluid1_datasmr = curated(curated.valve_state == dt.fluid1_vstate, :);
@@ -61,8 +59,8 @@ else
         init_time_fluid2, cal_params.cal_factor_pg_per_hz);
     
     % ---------------- Manual peak curation and data saving ----------------
-    curated_fluid1 = summary_pks_fluid1(dataidx1, :);
-    curated_fluid2 = summary_pks_fluid2(dataidx2, :);
+    curated_fluid1 = summary_pks_fluid1;
+    curated_fluid2 = summary_pks_fluid2;
     
     % ---------------- Density trap peak pairing ----------------
     fluid1_datasmr = curated_fluid1(curated_fluid1.valve_state == dt.fluid1_vstate, :);

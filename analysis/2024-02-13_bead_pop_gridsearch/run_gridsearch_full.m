@@ -1,17 +1,18 @@
+function run_gridsearch_full
 close all;
 addpath(genpath("..\..\helpers"))
 addpath(genpath("..\..\final_code"))
 
-warning('off', 'MATLAB:polyfit:RepeatedPointsOrRescale')
+warning('off')
 
 poolobj = parpool;
 
 %% Filepaths
-save_path = "A:\thomasu\simulations\031924_gridsearch";
-log_path = "A:\thomasu\raw_data\2024-03-15\6_8_10_dens_trap_reformat\20240315.170945_density_trap_results\log.json";
-fwd_curation_idx_path = "A:\thomasu\raw_data\2024-03-15\6_8_10_dens_trap_reformat\20240315.170945_density_trap_results\curation_index_fwd.csv";
-back_curation_idx_path = "A:\thomasu\raw_data\2024-03-15\6_8_10_dens_trap_reformat\20240315.170945_density_trap_results\curation_index_back.csv";
-bin_dir_path = "A:\thomasu\raw_data\2024-03-15\6_8_10_dens_trap_reformat";
+save_path = "Z:\thomasu\simulations\031924_gridsearch";
+log_path = "Z:\thomasu\raw_data\2024-03-15\6_8_10_dens_trap_reformat\20240315.170945_density_trap_results\log.json";
+fwd_unpaired_path = "Z:\thomasu\raw_data\2024-03-15\6_8_10_dens_trap_reformat\20240315.170945_density_trap_results\peakset_summary_unpaired_fluid1.csv";
+back_unpaired_path = "Z:\thomasu\raw_data\2024-03-15\6_8_10_dens_trap_reformat\20240315.170945_density_trap_results\peakset_summary_unpaired_fluid2.csv";
+bin_dir_path = "Z:\thomasu\raw_data\2024-03-15\6_8_10_dens_trap_reformat";
 fl1_ref_freq = 1158724;
 fl2_ref_freq = 1142951;
 rev_peaks_invert = 1;
@@ -19,10 +20,12 @@ rev_peaks_invert = 1;
 %% Set parameters
 
 % Read curation index matrix for forward peaks
-dataidx1 = readmatrix(fwd_curation_idx_path);
+fwd_unp = readmatrix(fwd_unpaired_path);
+fwd_arr_t = fwd_unp.real_time_s;
 
 % Read curation index matrix for backward peaks
-dataidx2 = readmatrix(back_curation_idx_path);
+back_unp = readmatrix(back_unpaired_path);
+back_arr_t = back_unp.real_time_s;
 
 % Set file selection bools for automatic file selection
 file_selection.valve_state = 1;
@@ -33,15 +36,15 @@ file_selection.cc_data = 0;
 
 %% Run gridsearch simulations
 
-% fitting_orders = 2:1:6; % order of polynomial fit of baseline
-% node_weights = 0:0.2:1; % weight of node points as a fraction of total peakset width
-% bl_fit_length = 0.5:1:7.5; % Length of baseline to fit as a fraction of 1/4 of the total peakset width
-% bl_fit_offset = 0:10:30; % Offset in datapoints between peak and baseline fitted area
+fitting_orders = 2:1:6; % order of polynomial fit of baseline
+node_weights = 0:0.2:1; % weight of node points as a fraction of total peakset width
+bl_fit_length = 0.5:1:7.5; % Length of baseline to fit as a fraction of 1/4 of the total peakset width
+bl_fit_offset = 0:10:30; % Offset in datapoints between peak and baseline fitted area
 
-fitting_orders = 2; % order of polynomial fit of baseline
-node_weights = 0; % weight of node points as a fract ion of total peakset width
-bl_fit_length = [0.5, 8]; % Length of baseline to fit as a fraction of 1/4 of the total peakset width
-bl_fit_offset = 25; % Offset in datapoints between peak and baseline fitted area
+% fitting_orders = 2; % order of polynomial fit of baseline
+% node_weights = 0; % weight of node points as a fract ion of total peakset width
+% bl_fit_length = [0.5, 8]; % Length of baseline to fit as a fraction of 1/4 of the total peakset width
+% bl_fit_offset = 25; % Offset in datapoints between peak and baseline fitted area
 
 % Order (same as dimensions in compiled data) is: fitting poly order, node
 % fitting weights, bl fit datapoint length
@@ -59,10 +62,10 @@ h = waitbar(0, 'Performing gridsearch...');
 afterEach(D, @nUpdateWaitbar);
 p = 1;
 
-% fileID = fopen('log.txt','w');
+% fileID = fopen(fullfile(save_path, 'log.txt'),'w');
 tic
 parfor i = 1:size(dff, 1)
-    % tic
+    tic
 
     % dff_slice = dff(i, :);
     % fit_ord_temp = fitting_orders(dff(i, 1));
@@ -90,7 +93,7 @@ parfor i = 1:size(dff, 1)
 
     paired_datasmr = run_single_search(run_params, file_selection, ...
         bin_dir_path, fl1_ref_freq, fl2_ref_freq, rev_peaks_invert, ...
-        dataidx1, dataidx2);
+        fwd_arr_t,  back_arr_t);
 
     % Save data to indices in cell arrays
     compiled_data{i} = paired_datasmr;
@@ -109,5 +112,6 @@ delete(poolobj)
 function nUpdateWaitbar(~)
     waitbar(p/size(dff, 1), h);
     p = p + 1;
-    disp('%i of %i...', p, size(dff, 1))
+    h.Name = sprintf('%i of %i...', p, size(dff, 1));
+end
 end
