@@ -30,7 +30,6 @@ if ~rev_peaks_invert
         analyze_freq_data(run_params, freqfile, timefile, vsfile);
     summary_pks = processed_to_summary(run_params, processed_freq_data, ...
         init_time, cal_params.cal_factor_pg_per_hz);
-   
     
     % ---------------- Density trap peak pairing ----------------
     fluid1_datasmr = curated(curated.valve_state == dt.fluid1_vstate, :);
@@ -59,8 +58,10 @@ else
         init_time_fluid2, cal_params.cal_factor_pg_per_hz);
     
     % ---------------- Manual peak curation and data saving ----------------
-    curated_fluid1 = summary_pks_fluid1;
-    curated_fluid2 = summary_pks_fluid2;
+    % curated_fluid1 = summary_pks_fluid1;
+    curated_fluid1 = curation_from_bead_arr(summary_pks_fluid1, fwd_arr_t);
+    % curated_fluid2 = summary_pks_fluid2;
+    curated_fluid2 = curation_from_bead_arr(summary_pks_fluid2, back_arr_t);
     
     % ---------------- Density trap peak pairing ----------------
     fluid1_datasmr = curated_fluid1(curated_fluid1.valve_state == dt.fluid1_vstate, :);
