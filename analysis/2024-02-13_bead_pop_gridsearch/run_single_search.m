@@ -62,7 +62,7 @@ else
     curated_fluid1 = curation_from_bead_arr(summary_pks_fluid1, fwd_arr_t);
     % curated_fluid2 = summary_pks_fluid2;
     curated_fluid2 = curation_from_bead_arr(summary_pks_fluid2, back_arr_t);
-    
+     
     % ---------------- Density trap peak pairing ----------------
     fluid1_datasmr = curated_fluid1(curated_fluid1.valve_state == dt.fluid1_vstate, :);
     fluid1_pk_direct = 1;
