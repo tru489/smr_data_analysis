@@ -108,7 +108,10 @@ if length(peak_idx) > 1
         set(gca,'YLim',[min(ydata) - 10 max(ydata) + 10]);
     end
 else
-    disp('size of peak_idx is smaller than 2')
+    if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+        disp('size of peak_idx is smaller than 2')
+    end
+    
     pk_data = zeros(13,1); 
     pass_struct.elapsed_time = pass_struct.elapsed_time + t(end);  
     return;

@@ -6,7 +6,7 @@ function add_swarmchart(fh, label_, data_vec, swarm_color, box_color)
         swarm_color = 'blue'
         box_color = 'red'
     end
-    if class(label_) == 'char'
+    if ~isstring(label_)
         label_ = string(label_);
     end
 

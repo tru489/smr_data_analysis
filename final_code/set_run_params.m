@@ -44,7 +44,7 @@ run_params.analysis_params.verbose = 0;
 
 %% General peak analysis preferences
 % Manually curate peaks
-run_params.prefs.manual_curation = 0;
+run_params.prefs.manual_curation = 1;
 
 % Option to load curation preferences in from a previous curation session.
 % Requires the same peak selection parameters to be used (i.e. the number

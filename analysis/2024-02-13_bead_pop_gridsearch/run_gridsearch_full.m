@@ -9,7 +9,7 @@ warning('off')
 
 %% Filepaths
 drive_lett = "Z";
-save_path = drive_lett + ":\thomasu\simulations\031924_gridsearch";
+save_path = drive_lett + ":\thomasu\raw_data\2024-03-19\dens_trap_fitting_gridsearch";
 log_path = drive_lett + ":\thomasu\raw_data\2024-03-15\6_8_10_dens_trap_reformat\20240315.170945_density_trap_results\log.json";
 fwd_unpaired_path = drive_lett + ":\thomasu\raw_data\2024-03-15\6_8_10_dens_trap_reformat\20240315.170945_density_trap_results\peakset_summary_unpaired_fluid1.csv";
 back_unpaired_path = drive_lett + ":\thomasu\raw_data\2024-03-15\6_8_10_dens_trap_reformat\20240315.170945_density_trap_results\peakset_summary_unpaired_fluid2.csv";

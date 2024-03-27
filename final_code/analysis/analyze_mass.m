@@ -38,6 +38,7 @@ run_params.saving.save_abs_path = create_results_dir(run_params, data_dir);
 save_abs_path = run_params.saving.save_abs_path;
 
 %% Analyze frequency data to get peaks
+disp('Detecting peaks from frequency data...')
 if ~rev_peaks_invert
     [processed_freq_data, pass_struct, init_time] = analyze_freq_data(run_params, ...
         freqfile, timefile, vsfile);

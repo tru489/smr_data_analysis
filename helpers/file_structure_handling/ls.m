@@ -2,7 +2,7 @@ function contents = ls(dirpath, is_fullpath)
 
 arguments
     dirpath
-    is_fullpath = false
+    is_fullpath = true
 end
 % Does the equivalent of ls in unix shells, lists dir contents. 
 % 

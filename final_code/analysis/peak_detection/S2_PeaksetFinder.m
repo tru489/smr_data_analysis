@@ -39,8 +39,10 @@ idx = [idx; length(ydata)];
 % If length of flat portion of baseline is insufficient
 if length(idx) < 2
     peaks = [];
-    disp("No sufficiently flat portion of baseline in peakset " + ...
-        "finding is found; no peaks found")
+    if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
+        disp("No sufficiently flat portion of baseline in peakset " + ...
+            "finding is found; no peaks found")
+    end
     return
 end
 
