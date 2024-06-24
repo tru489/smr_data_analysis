@@ -50,6 +50,8 @@ pass_struct.elapsed_time = 0;
 pass_struct.samplepeak = [];
 pass_struct.sampletime = [];
 pass_struct.sample_baseline_fits = [];
+pass_struct.left_bl_length = [];
+pass_struct.right_bl_length = [];
 
 i = 0;
 datasize = run_params.backend.datasize;

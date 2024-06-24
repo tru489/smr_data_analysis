@@ -7,7 +7,7 @@ function dens_bl_cal_rescale()
 addpath(genpath("..\..\helpers"))
 
 disp('Select raw data baseline cal file...')
-[fname, path] = uigetfile("A:\thomasu\raw_data", '*.csv');
+[fname, path] = uigetfile("A:\thomasu\raw_data");
 
 tab = readtable(fullfile(path, fname));
 

@@ -1,5 +1,5 @@
 function [datasmr_processed, dataidx, curation_log] = manual_pk_curation(run_params, samplepeak, ...
-    sampletime, sample_baseline_fits, datasmr)
+    sampletime, sample_baseline_fits, left_bl_length, right_bl_length, datasmr)
 % Manual peak curation for frequency data
 % 
 % Arguments:
@@ -107,11 +107,16 @@ while i < length(idx0)
         
         clf;
         hold on;
-        plot(time, peak, 'b', 'LineWidth', 1.5);
+        plot(time, peak, 'b', 'LineWidth', 2);
         if run_params.curation.disp_bl_fit
             bl_fit = bl_fit - pk_median;
-            plot(time, bl_fit, 'r--', 'LineWidth', 1.5)
+            plot(time, bl_fit, 'r--', 'LineWidth', 2)
         end
+        bl_left = left_bl_length(i); bl_right = right_bl_length(i);
+
+        plot(time(1:1+bl_left), peak(1:1+bl_left), 'g', LineWidth=2)
+        plot(time(end-bl_right:end), peak(end-bl_right:end), 'g', LineWidth=2)
+
         title(sprintf('Peak %d / %d\n', i, length(idx0)), "FontSize", 20)
         hold off;
 
@@ -142,6 +147,8 @@ while i < length(idx0)
             if run_params.curation.disp_bl_fit
                 temp_st.bl_fit = bl_fit;
             end
+            temp_st.left_baseline = peak(1:1+bl_left);
+            temp_st.right_baseline = peak(end-bl_right:end);
             temp_st.status = 1;
             curation_log = [curation_log, temp_st];
         elseif evaluate_fit == 'x' % Exit from the aligner routine
@@ -168,6 +175,8 @@ while i < length(idx0)
             if run_params.curation.disp_bl_fit
                 temp_st.bl_fit = bl_fit;
             end
+            temp_st.left_baseline = peak(1:1+bl_left);
+            temp_st.right_baseline = peak(end-bl_right:end);
             temp_st.status = 0;
             curation_log = [curation_log, temp_st];
         end

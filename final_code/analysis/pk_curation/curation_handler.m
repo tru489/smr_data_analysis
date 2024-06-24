@@ -17,10 +17,12 @@ disp('Performing data curation...')
 samplepeak = pass_struct.samplepeak;
 sampletime = pass_struct.sampletime;
 sample_baseline_fits = pass_struct.sample_baseline_fits;
+left_bl_length = pass_struct.left_bl_length;
+right_bl_length = pass_struct.right_bl_length;
 
 if run_params.prefs.manual_curation
     [curated, dataidx, curation_log] = manual_pk_curation(run_params, samplepeak, ...
-        sampletime, sample_baseline_fits, summary_pks);
+        sampletime, sample_baseline_fits, left_bl_length, right_bl_length, summary_pks);
     save(fullfile(save_abs_path, 'curation_log.mat'), "curation_log")
 else
     if run_params.curation.auto_rejection

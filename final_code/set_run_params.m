@@ -18,11 +18,11 @@ run_params.analysis_type.dens_trap_base_freq_recal = 0;
 
 % --------------------------- Analysis types ---------------------------
 % Calculates mass measurements from freq/time data
-run_params.analysis_type.mass = 1;
+run_params.analysis_type.mass = 0;
 % Calculates mass/volume from freq/time/fluorescence data
 run_params.analysis_type.fl_excl = 0;
 % Calculates density/volume from density trapping data
-run_params.analysis_type.density_trap = 0;
+run_params.analysis_type.density_trap = 1;
 % Calculates water content from density trapping with D2O (i.e. freq in two
 % fluids/time/fluorescence data)
 run_params.analysis_type.water_content = 0;
@@ -58,20 +58,20 @@ run_params.mass_cal.save_peak_summary = 1;
 %% General density trapping analysis preferences
 % Valve state codes indicating whether fluid is in first or second density
 % trap fluid
-run_params.density_trap.fluid1_vstate = 11;
-run_params.density_trap.fluid2_vstate = 7;
+run_params.density_trap.fluid1_vstate = 7; % 11 nl
+run_params.density_trap.fluid2_vstate = 11; % 7 nl
 
 % Maximum backflush time allowed for reverse peaks to arrive
-run_params.density_trap.max_time_gap = 9000; % m
+run_params.density_trap.max_time_gap =  10000; % ms
 
 % Maximum time gap between adjacent forward peaks
-run_params.density_trap.min_forward_gap = 4000; % ms
+run_params.density_trap.min_forward_gap = 200; % ms
 
 % Use multiple bead pairing to pair multiple beads within a single trap
 % (using above thresholding)
 run_params.density_trap.use_multi_bead_pair = 1;
 % Density range in which paired forward and reverse peaks are acceptable
-run_params.density_trap.candidate_pair_dens_window = [1.044, 1.056]; % g/cm3
+run_params.density_trap.candidate_pair_dens_window = [1.2, 1.8]; % g/cm3
 
 % Whether or not to save unpaired data
 run_params.density_trap.save_unpaired = 1;
@@ -178,7 +178,7 @@ run_params.fl_excl.fxm_baseline_choice = 2;
 % *************** IMPORTANT ******************
 % For fluorescence exclusion threshold, always use a negative value,
 % and still postitive threshold for downstream channels
-run_params.fl_excl.detect_thresh_pmt(1) = -2.5; 
+run_params.fl_excl.detect_thresh_pmt(1) = -2.5; % -2.5 nl 
 run_params.fl_excl.detect_thresh_pmt(2) = 10; 
 run_params.fl_excl.detect_thresh_pmt(3) = 10;
 run_params.fl_excl.detect_thresh_pmt(4) = 10;
@@ -194,12 +194,12 @@ run_params.fl_excl.upstream_compen = 0;
 run_params.fl_excl.thresh_baselineDiff_over_sig = 0.05;
 % Cutoff for left-right baseline slopes
 run_params.fl_excl.thresh_base_slope = 2*10^-3;
-run_params.fl_excl.thresh_base_height_range = 0.05;
+run_params.fl_excl.thresh_base_height_range = 0.05; % nl 0.05
 
 % Use calibration with coulter counter data, or use manually input
 % parameter?
 run_params.fl_excl.use_coulter_calibration = 0;
-run_params.fl_excl.manual_fl_per_au_cal_factor = 14.0306;
+run_params.fl_excl.manual_fl_per_au_cal_factor = 17.29258035;
 
 %% Visualization preferences
 % Create matlab figure windows when analysis is complete

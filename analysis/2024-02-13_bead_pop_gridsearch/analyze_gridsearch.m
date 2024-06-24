@@ -59,8 +59,8 @@ for i = 1:size(dff, 1)
 
         % Extract metrics from this population
         dens_rej = dv_arr_out_rej(:,1); vol_rej = dv_arr_out_rej(:,2);
-        met_st.raw_table = [met_st.raw_table; dv_sl];
-        met_st.raw_table_seg{4-j} = dv_sl;
+        met_st.raw_table = [met_st.raw_table; dv_arr_out_rej];
+        met_st.raw_table_seg{4-j} = dv_arr_out_rej;
         met_st.dens_mean = [mean(dens_rej), met_st.dens_mean];
         met_st.dens_pct_err = [(mean(dens_rej) - 1.05) / 1.05, met_st.dens_pct_err];
         met_st.vol_mean = [mean(vol_rej), met_st.vol_mean];

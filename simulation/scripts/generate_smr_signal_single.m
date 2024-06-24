@@ -83,7 +83,7 @@ disp('Sampling SMR noise from empirical data...')
 % target_noise_Hz = noise_level;
 % noise_term = Colornoise_2()' / std(Colornoise_2()') * noise_level;
 
-noise_term = generate_smr_measurement_noise(total_datapoints);
+noise_term = generate_bl_for_sims(total_datapoints, 1000);
 
 %% Start simulation
 % Feature list:

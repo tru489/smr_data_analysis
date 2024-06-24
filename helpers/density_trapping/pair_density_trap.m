@@ -103,11 +103,11 @@ for i = 1:length(group_indices)
     % individual particle trap
     fwd_idx = group_indices(i);
     fwd_t = times(fwd_idx);
-    fwd_cand_idx = find(times > fwd_t - min_forward_gap & times <= fwd_t);
+    fwd_cand_idx = find(times > fwd_t - min_forward_gap & times <= fwd_t & vstates==f1_vstate);
 
     back_idx = group_indices(i) + 1;
     back_t = times(back_idx);
-    back_cand_idx = find(times >= back_t & times < back_t + max_time_gap);
+    back_cand_idx = find(times >= back_t & times < back_t + max_time_gap & vstates==f2_vstate);
 
     % If only one particle is detected for each of the forward and reverse
     % measurements during a peak, add this pairing to the pair array and
@@ -134,8 +134,8 @@ for i = 1:length(group_indices)
                 [density_gcm3, ~] = calc_particle_dv_single(fwd_cand_data, back_cand_data, ...
                     fl1_ref_freq, fl2_ref_freq, intercept, slope, mass_cal_factor);
                 cand_pair_bool_arr(j, k) = ...
-                    candidate_pair_dens_window(1) > density_gcm3 & ...
-                    candidate_pair_dens_window(2) < density_gcm3;
+                    candidate_pair_dens_window(1) < density_gcm3 & ...
+                    candidate_pair_dens_window(2) > density_gcm3;
             end
         end
     
@@ -149,15 +149,20 @@ for i = 1:length(group_indices)
         
         filt_bool_arr = cand_pair_bool_arr(row_select_mask, :);
         filt_bool_arr = filt_bool_arr(:, col_select_mask);
+        if sum(filt_bool_arr, "all") == 0
+            filt_bool_arr = [];
+        end
     
         % Scan through filtered pair matrix to find unique pairing indices
-        for m = 1:length(filt_fwd_cand_idx)
-            fwd_unq_pair_idx = filt_fwd_cand_idx(m);
-            back_unq_pair_idx = filt_back_cand_idx(filt_bool_arr(m, :) == 1);
-    
-            pairable_indices(2*pair_id-1:2*pair_id) = [fwd_unq_pair_idx, back_unq_pair_idx];
-            pair_id_arr(2*pair_id-1:2*pair_id) = [pair_id, pair_id];
-            pair_id = pair_id + 1;
+        if ~isempty(filt_bool_arr)
+            for m = 1:length(filt_fwd_cand_idx)
+                fwd_unq_pair_idx = filt_fwd_cand_idx(m);
+                back_unq_pair_idx = filt_back_cand_idx(filt_bool_arr(m, :) == 1);
+        
+                pairable_indices(2*pair_id-1:2*pair_id) = [fwd_unq_pair_idx, back_unq_pair_idx];
+                pair_id_arr(2*pair_id-1:2*pair_id) = [pair_id, pair_id];
+                pair_id = pair_id + 1;
+            end
         end
     end
 end
@@ -191,7 +196,6 @@ for j = 1:num_pairs
     back_pk = fl2_pair_summ(fl2_pair_summ.fl2_pair_id == j, :);
     
     bl1_avg(j) = fwd_pk.fl1_avg_baseline(1);
-    
     bl2_avg(j) = back_pk.fl2_avg_baseline(1);
 end
 

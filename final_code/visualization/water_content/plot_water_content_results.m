@@ -33,21 +33,23 @@ fig_path_cell{i} = total_vol_hist_path;
 i = i + 1;
 
 %% Coulter counter histogram
-cc_hist = figure('visible', fig_visibility);
-set(cc_hist, 'color', 'w')
-
-vol_ceiling =(4*pi*(40./2).^3)/3; % for 40um filter
-histogram('BinEdges', cc_hist_bin_edges, 'BinCounts', cc_hist_bin_counts)
-xlim([0, vol_ceiling])
-set(gca, 'Xscale', 'log')
-ax = gca; ax.FontSize = 11;
-xlabel('Coulter Counter Volume (fl)', 'FontSize', 13)
-ylabel('Count', 'FontSize', 13)
-
-cc_hist_path = fullfile(fig_path, 'coulter_counter_hist.jpg');
-saveas(cc_hist, cc_hist_path)
-fig_path_cell{i} = cc_hist_path;
-i = i + 1;
+if ~isnan(cc_hist_bin_edges)
+    cc_hist = figure('visible', fig_visibility);
+    set(cc_hist, 'color', 'w')
+    
+    vol_ceiling =(4*pi*(40./2).^3)/3; % for 40um filter
+    histogram('BinEdges', cc_hist_bin_edges, 'BinCounts', cc_hist_bin_counts)
+    xlim([0, vol_ceiling])
+    set(gca, 'Xscale', 'log')
+    ax = gca; ax.FontSize = 11;
+    xlabel('Coulter Counter Volume (fl)', 'FontSize', 13)
+    ylabel('Count', 'FontSize', 13)
+    
+    cc_hist_path = fullfile(fig_path, 'coulter_counter_hist.jpg');
+    saveas(cc_hist, cc_hist_path)
+    fig_path_cell{i} = cc_hist_path;
+    i = i + 1;
+end
 
 %% Time gaps between forward and back peaks
 fwd_back_hist = plot_histogram(...
@@ -103,9 +105,10 @@ fig_path_cell{i} = water_content_path;
 i = i + 1;
 
 %% Water content vs total volume
-wc_vs_tot_vol = plot_scatter_histogram(full_summary, ...
+wc_vs_tot_vol = figure(Visible=fig_visibility);
+wc_vs_tot_vol = plot_scatter_histogram(wc_vs_tot_vol, full_summary, ...
     'total_volume_fl', 'water_content', 'Total cell volume (fl)', ...
-    'Fractional water content', fig_visibility);
+    'Fractional water content');
 
 wc_vs_tot_vol_path = fullfile(fig_path, 'wc_vs_tot_volume.jpg');
 saveas(wc_vs_tot_vol, wc_vs_tot_vol_path)
@@ -113,9 +116,10 @@ fig_path_cell{i} = wc_vs_tot_vol_path;
 i = i + 1;
 
 %% Water content vs dry volume
-wc_vs_dry_vol = plot_scatter_histogram(full_summary, ...
+wc_vs_dry_vol = figure(Visible=fig_visibility);
+wc_vs_dry_vol = plot_scatter_histogram(wc_vs_dry_vol, full_summary, ...
     'volume_fl', 'water_content', 'Dry cell volume (fl)', ...
-    'Fractional water content', fig_visibility);
+    'Fractional water content');
 
 wc_vs_dry_vol_path = fullfile(fig_path, 'wc_vs_dry_volume.jpg');
 saveas(wc_vs_dry_vol, wc_vs_dry_vol_path)
@@ -123,9 +127,10 @@ fig_path_cell{i} = wc_vs_dry_vol_path;
 i = i + 1;
 
 %% Water content vs dry density
-wc_vs_dry_dens = plot_scatter_histogram(full_summary, ...
+wc_vs_dry_dens = figure(Visible=fig_visibility);
+wc_vs_dry_dens = plot_scatter_histogram(wc_vs_dry_dens, full_summary, ...
     'density_gcm3', 'water_content', 'Dry mass density (g/cm3)', ...
-    'Fractional water content', fig_visibility);
+    'Fractional water content');
 
 wc_vs_dry_dens_path = fullfile(fig_path, 'wc_vs_dry_dens.jpg');
 saveas(wc_vs_dry_dens, wc_vs_dry_dens_path)

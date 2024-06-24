@@ -1,0 +1,8 @@
+{
+  "ground_truth_mass_pg": 48.07325337045274,
+  "bead_diameter_um": 12.01,
+  "avg_freq_hz": 60.047640503507488,
+  "date": "20240303",
+  "cal_factor_pg_per_hz": 0.80058521812600947,
+  "cv_mass": 0.018670386530758372
+}

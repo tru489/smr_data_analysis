@@ -1,10 +1,11 @@
-function add_swarmchart(fh, label_, data_vec, swarm_color, box_color)
+function add_swarmchart(fh, label_, data_vec, swarm_color, box_color, marker_sz)
     arguments
         fh
         label_
         data_vec
         swarm_color = 'blue'
         box_color = 'red'
+        marker_sz = 8
     end
     if ~isstring(label_)
         label_ = string(label_);
@@ -12,7 +13,7 @@ function add_swarmchart(fh, label_, data_vec, swarm_color, box_color)
 
     figure(fh)
     s = swarmchart(categorical(repmat(label_, length(data_vec), 1)), ...
-        data_vec, 8, 'filled', 'MarkerFaceAlpha', 0.2, ...
+        data_vec, marker_sz, 'filled', 'MarkerFaceAlpha', 0.2, ...
         'MarkerEdgeAlpha',0.2, 'MarkerFaceColor', swarm_color, 'MarkerEdgeColor', swarm_color);
     hold on;
     b = boxchart(categorical(repmat(label_, length(data_vec), 1)), data_vec);

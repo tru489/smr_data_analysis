@@ -20,11 +20,11 @@ if is_density_trap
     % indicates another fitting regime
     run_params.backend.baseline_fit_type = 2;
     % Determines whether to use nodes in baseline fitting
-    run_params.backend.use_node_bl_fit = false;
+    run_params.backend.use_node_bl_fit = true; % nl false
     % Determines the weight to use for nodes in baseline fitting (integer
     % factor which node terms are multiplied by in linear regression error
     % function
-    run_params.backend.node_bl_weight = 1;
+    run_params.backend.node_bl_weight = 1; % nl 1
     
     % Does not use a polynomial fit on antipeaks in peak fitter (perhaps not 
     % crucial)
@@ -32,8 +32,8 @@ if is_density_trap
     
     % Acquire a shorter baseline segment around each peakset for density 
     % trapping in order to better fit a quadratic baseline
-    run_params.backend.sidelength_coef = 2*0.25;
-    run_params.backend.offset_length = 25;
+    run_params.backend.sidelength_coef = 2*0.25; % nl 2*0.25
+    run_params.backend.offset_length = 25; % 25 nl
 
 
     % Change the edge indices chosen for each peakset to for density
@@ -95,7 +95,7 @@ if run_params.bl_select.use_presets
         % Distance over which there are unique 2nd mode peaks
         run_params.bl_select.unqPeakDist = 300; % 250
         % Baseline offset threshold to select for peaks
-        run_params.bl_select.offset_input = 5; % 3 % 1
+        run_params.bl_select.offset_input = 5; % 5 nl, 2 for small, 25 for large
         
         % Choose the first point left/right of the secondary peaks 40% percent 
         % of the average baseline freqvalue

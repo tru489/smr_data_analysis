@@ -1,0 +1,10 @@
+soln_name,density,feedback_freq,feedback_delay
+diH2O,0.997,1160152,459
+3% d-glucose,1.0097,1158070,462
+6% d-glucose,1.0214,1155959,462
+9% d-glucose,1.0334,1153835,463
+12% d-glucose,1.0457,1151725,462
+16% d-glucose,1.0624,1148746,462
+20% d-glucose,1.0797,1145597,463
+24% d-glucose,1.0973,1142585,463
+28% d-glucose,1.1154,1139505,464

@@ -1,4 +1,9 @@
-function [f_handle, dir, fname] = get_raw_file_handle(data_name)
+function [f_handle, dir, fname] = get_raw_file_handle(data_name, freq_path)
+arguments
+    data_name
+    freq_path = ""
+end
+
 % Get the file handle/ID of a raw data binary file
 % 
 % Arguments:
@@ -6,14 +11,19 @@ function [f_handle, dir, fname] = get_raw_file_handle(data_name)
 % Returns: 
 %   f_handle (file ID): file handle binary file to be used
 
-disp("Getting " + data_name + " data...")
-[path, dir, ind] = uigetfile('../*.*', "Select " + data_name + " file", ...
-    ' ');
-if ind ~= 0
-    f_handle = fopen(strcat(dir, path), 'r', 'b');
+if freq_path == ""
+    disp("Getting " + data_name + " data...")
+    [path, dir, ind] = uigetfile('../*.*', "Select " + data_name + " file", ...
+        ' ');
+    if ind ~= 0
+        f_handle = fopen(strcat(dir, path), 'r', 'b');
+    else
+        error("IOError: Binary file not selected")
+    end
+    fname = path;
 else
-    error("IOError: Binary file not selected")
-end
-fname = path;
+    f_handle = fopen(freq_path, 'r', 'b');
+    [dir, name, ext] = fileparts(freq_path);
+    fname = strcat(name, ext);
 
 end

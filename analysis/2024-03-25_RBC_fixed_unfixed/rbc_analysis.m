@@ -18,8 +18,10 @@ for i = 1:length(pths)
         dens_fl = 1.0056;
     elseif reg.n == 'man'
         dens_fl = 1.0367;
+        vol = vol * 0.93;
     else
         dens_fl = 1.0116;
+        vol = vol * 0.88;
     end
 
     reg = regexp(pths_short{i}, "^\.\\data\\\d{4}-\d{2}-\d{2}_(?<n>[a-z_]*).csv$", "names");
