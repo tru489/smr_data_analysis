@@ -44,12 +44,23 @@ run_params.analysis_params.verbose = 0;
 
 %% General peak analysis preferences
 % Manually curate peaks
-run_params.prefs.manual_curation = 1;
+run_params.prefs.manual_curation = 0;
 
 % Option to load curation preferences in from a previous curation session.
 % Requires the same peak selection parameters to be used (i.e. the number
 % of peaks between the previous session and this one must be the same)
 run_params.prefs.load_previous_curation = 0;
+
+%% Special preferences for multi-size bead analysis
+% Stiff particles like beads require multiple thresholds to deal with
+% variable node deviation across particle sizes. Enables an option to
+% iterate through multiple offset thresholds to identify all possible
+% peaks. Identifies duplicate peaks across conditions using a time
+% threshold; if there are conflicts between peaks detected from separate
+% offsets, preference is given to dataset with earlier index below (i.e. index 
+% 1 in multi_offset_threshold is given priority 1, index 2 is given 2, etc)
+run_params.prefs.multisz_bead_analysis = 1;
+run_params.bl_select.multi_offset_threshold = [25, 5, 2];
 
 %% Mass calibration preferences
 % Save peak summary raw data

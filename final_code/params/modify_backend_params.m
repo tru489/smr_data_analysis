@@ -20,11 +20,11 @@ if is_density_trap
     % indicates another fitting regime
     run_params.backend.baseline_fit_type = 2;
     % Determines whether to use nodes in baseline fitting
-    run_params.backend.use_node_bl_fit = true; % nl false
+    run_params.backend.use_node_bl_fit = false; % nl false
     % Determines the weight to use for nodes in baseline fitting (integer
     % factor which node terms are multiplied by in linear regression error
     % function
-    run_params.backend.node_bl_weight = 1; % nl 1
+    run_params.backend.node_bl_weight = 1;
     
     % Does not use a polynomial fit on antipeaks in peak fitter (perhaps not 
     % crucial)
@@ -47,7 +47,7 @@ if is_density_trap
     % When finding peaksets for mass data (not density trapping), used a
     % fixed threshold (variable threshold still used for initial single peak
     % detection)
-    run_params.backend.fixed_peakset_thresh = 0;
+    run_params.backend.fixed_peakset_thresh = 0; % nl 0
 else
     run_params.backend.extended_bl_detect = 0;
     

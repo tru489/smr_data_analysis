@@ -58,11 +58,10 @@ else
         init_time_fluid2, cal_params.cal_factor_pg_per_hz);
     
     % ---------------- Manual peak curation and data saving ----------------
-    max_time_offset = 0.05;
-    % curated_fluid1 = summary_pks_fluid1
-    curated_fluid1 = curation_from_bead_arr(summary_pks_fluid1, fwd_arr_t, max_time_offset);
+    % curated_fluid1 = summary_pks_fluid1;
+    curated_fluid1 = curation_from_bead_arr(summary_pks_fluid1, fwd_arr_t);
     % curated_fluid2 = summary_pks_fluid2;
-    curated_fluid2 = curation_from_bead_arr(summary_pks_fluid2, back_arr_t, max_time_offset);
+    curated_fluid2 = curation_from_bead_arr(summary_pks_fluid2, back_arr_t);
      
     % ---------------- Density trap peak pairing ----------------
     fluid1_datasmr = curated_fluid1(curated_fluid1.valve_state == dt.fluid1_vstate, :);

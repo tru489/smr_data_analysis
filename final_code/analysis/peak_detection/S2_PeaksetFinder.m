@@ -84,7 +84,13 @@ while repeatflag
     % Find all freq values that pass this threshold - these are the main 
     % peaks (specifically: identify freq values that do not pass the
     % threshold, and find the indices not included in this array)
-    pkidx = find(ydata < minpkht_thres);
+    if ~run_params.prefs.multisz_bead_analysis
+        pkidx = find(ydata < minpkht_thres);
+    else
+        pkidx = S2_Concat_MultiSzBead_idx(run_params, ydata, ydata_thres);
+    end
+    
+    
     if ~isempty(pkidx)
         % Find all breaks in y_diff indices; each segment is a peak of 
         % interest, with end on idx_end and start on (idx_end + 1)

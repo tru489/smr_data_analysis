@@ -86,8 +86,12 @@ end
 ydata_thres = interp1(xdata(idx), ydata(idx), xdata);
 
 % Find datapoints that drop below offset threshold; these are main peaks
-ydata_thres = ydata_thres - offset_input; 
-idx = find(ydata < ydata_thres);
+if ~run_params.prefs.multisz_bead_analysis
+    ydata_thres = ydata_thres - offset_input; 
+    idx = find(ydata < ydata_thres);
+else
+    [idx, ydata_thres] = S2_Concat_MultiSzBead_idx(run_params, ydata, ydata_thres);
+end
 
 % Iterate through indices at which peaks were identified to find peak 
 % indices
@@ -194,8 +198,13 @@ for i = 1:length(peak_idx)
                 % Normalize indices of peak data and baseline data to 
                 % local indexing specific to this peakset
                 local_peaks = peaks - left_base(1) + 1;
-                local_baseline = [left_base - left_base(1) + 1, ...
-                    right_base - left_base(1) + 1];
+
+                if left_base(end) > right_base(1) || left_base(end) > peaks(1) || right_base(1) < peaks(end)
+                    continue
+                else 
+                    local_baseline = [left_base - left_base(1) + 1, ...
+                        right_base - left_base(1) + 1];
+                end
             
                 % Perform polynomial fits to refine peak location and 
                 % to measure peak height

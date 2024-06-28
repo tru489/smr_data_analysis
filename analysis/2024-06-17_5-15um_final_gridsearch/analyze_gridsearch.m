@@ -2,8 +2,8 @@ close all;
 addpath(genpath("..\..\helpers"));
 
 drive_lett = "A";
-search_path = drive_lett + ":\thomasu\raw_data\2024-06-28\dens_trap_fitting_gridsearch_5-15um\data_paired.mat";
-save_path = drive_lett + ":\thomasu\raw_data\2024-06-28\dens_trap_fitting_gridsearch_5-15um\data_cleaned.mat";
+search_path = drive_lett + ":\thomasu\raw_data\2024-03-19\dens_trap_fitting_gridsearch\data_paired.mat";
+save_path = drive_lett + ":\thomasu\raw_data\2024-03-19\dens_trap_fitting_gridsearch\data_cleaned.mat";
 st = load(search_path);
 
 % Order of params: fitting_order, node_weight, bl_fit_length, bl_fit_offset
