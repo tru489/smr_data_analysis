@@ -1,21 +1,21 @@
-function run_gridsearch_full
+function run_gridsearch_full_new_dataset
 close all;
 addpath(genpath("..\..\helpers"))
 addpath(genpath("..\..\final_code"))
 
 warning('off')
 
-% poolobj = parpool;
+poolobj = parpool; % delete(gcp('nocreate'))
 
 %% Filepaths
 drive_lett = "A";
-save_path = drive_lett + ":\thomasu\raw_data\2024-03-19\dens_trap_fitting_gridsearch";
-log_path = drive_lett + ":\thomasu\raw_data\2024-03-15\6_8_10_dens_trap_reformat\20240315.170945_density_trap_results\log.json";
-fwd_unpaired_path = drive_lett + ":\thomasu\raw_data\2024-03-15\6_8_10_dens_trap_reformat\20240315.170945_density_trap_results\peakset_summary_unpaired_fluid1.csv";
-back_unpaired_path = drive_lett + ":\thomasu\raw_data\2024-03-15\6_8_10_dens_trap_reformat\20240315.170945_density_trap_results\peakset_summary_unpaired_fluid2.csv";
-bin_dir_path = drive_lett + ":\thomasu\raw_data\2024-03-15\6_8_10_dens_trap_reformat";
-fl1_ref_freq = 1158724;
-fl2_ref_freq = 1142951;
+save_path = drive_lett + ":\thomasu\raw_data\2024-06-28\dens_trap_fitting_gridsearch_5-15um";
+log_path = drive_lett + ":\thomasu\raw_data\2024-06-17\5-15um_bead_trap\20240628.104421_density_trap_results\log.json";
+fwd_unpaired_path = drive_lett + ":\thomasu\raw_data\2024-06-17\5-15um_bead_trap\20240628.104421_density_trap_results\peakset_summary_unpaired_fluid1.csv";
+back_unpaired_path = drive_lett + ":\thomasu\raw_data\2024-06-17\5-15um_bead_trap\20240628.104421_density_trap_results\peakset_summary_unpaired_fluid2.csv";
+bin_dir_path = drive_lett + ":\thomasu\raw_data\2024-06-17\5-15um_bead_trap";
+fl1_ref_freq = 1158754;
+fl2_ref_freq = 1142254;
 rev_peaks_invert = 1;
 
 %% Set parameters
@@ -37,10 +37,10 @@ file_selection.cc_data = 0;
 
 %% Run gridsearch simulations
 
-fitting_orders = 2:1:6; % order of polynomial fit of baseline
+fitting_orders = 1:1:5; % order of polynomial fit of baseline
 node_weights = 0:0.2:1; % weight of node points as a fraction of total peakset width
 bl_fit_length = 0.5:1:7.5; % Length of baseline to fit as a fraction of 1/4 of the total peakset width
-bl_fit_offset = 0:10:30; % Offset in datapoints between peak and baseline fitted area
+bl_fit_offset = -20:10:30; % Offset in datapoints between peak and baseline fitted area
 
 % fitting_orders = [2]; % order of polynomial fit of baseline
 % node_weights = 0; % weight of node points as a fract ion of total peakset width
@@ -65,8 +65,8 @@ p = 1;
 
 % fileID = fopen(fullfile(save_path, 'log.txt'),'w');
 tic
-%parfor 
-for i = 1:size(dff, 1)
+parfor i = 1:size(dff, 1)
+%for i = 1:size(dff, 1)
     tic
 
     % dff_slice = dff(i, :);

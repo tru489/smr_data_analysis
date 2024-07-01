@@ -65,7 +65,8 @@ p = 1;
 
 % fileID = fopen(fullfile(save_path, 'log.txt'),'w');
 tic
-parfor i = 1:size(dff, 1)
+%parfor 
+for i = 1:size(dff, 1)
     tic
 
     % dff_slice = dff(i, :);
