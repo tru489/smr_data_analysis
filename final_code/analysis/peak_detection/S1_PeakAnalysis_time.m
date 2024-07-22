@@ -256,6 +256,10 @@ for i = 1:length(peak_idx)
                 pass_struct.right_bl_length = ...
                     [pass_struct.right_bl_length length(right_base)];
                 
+                peak_times = pass_struct.elapsed_time + t(local_pkidx_poly + segmentbound(i) + left_base(1))';
+                pass_struct.peak_avg_time = ...
+                    [pass_struct.peak_avg_time, mean([peak_times(1), peak_times(end)])];
+                
                 if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
                     fprintf('------- Data segment %1.0f ------ \n', ...
                         sectionnumber);

@@ -55,6 +55,7 @@ if ~rev_peaks_invert
         analyze_freq_data(run_params, freqfile, timefile, vsfile);
     summary_pks = processed_to_summary(run_params, processed_freq_data, ...
         init_time, cal_params.cal_factor_pg_per_hz);
+    save(fullfile(save_abs_path, 'pass_struct_combined.mat'), "pass_struct")
     
     % ---------------- Manual peak curation and data saving ----------------
     if ~run_params.prefs.load_previous_curation
@@ -95,6 +96,9 @@ else
         freqfile, timefile, vsfile, 1);
     summary_pks_fluid2 = processed_to_summary(run_params, processed_freq_data_fl2, ...
         init_time_fluid2, cal_params.cal_factor_pg_per_hz);
+
+    save(fullfile(save_abs_path, 'pass_struct_fluid1.mat'), "pass_struct_fluid1")
+    save(fullfile(save_abs_path, 'pass_struct_fluid2.mat'), "pass_struct_fluid2")
     
     % ---------------- Manual peak curation and data saving ----------------
     if ~run_params.prefs.load_previous_curation
@@ -112,10 +116,12 @@ else
         dataidx1 = readmatrix(fullfile(dir, fname));
         curated_fluid1 = summary_pks_fluid1(dataidx1, :);
 
+
         disp('Select previous curation choice CSV for backward measurement...')
         [fname, dir, ~] = uigetfile('../*.*','Select previous curation choice CSV for backward measurement...',' ');
         dataidx2 = readmatrix(fullfile(dir, fname));
         curated_fluid2 = summary_pks_fluid2(dataidx2, :);
+
     end
 
     writematrix(dataidx1, fullfile(save_abs_path, 'curation_index_fwd.csv'))

@@ -12,21 +12,28 @@ function analyze_mass_cal(run_params, datasmr, save_dir, formatted_date)
 
 freqs = datasmr.avg_pk_ht_hz;
 
-fprintf('\nReference calibration particles:\n');
-fprintf('     4 um --> 4.000 um\n');
-fprintf('     5 um --> 5.000 um\n');
-fprintf('     6 um --> 6.007 um\n');
-fprintf('     7 um --> 6.976 um\n');
-fprintf('     8 um --> 7.979 um\n');
-fprintf('     9 um --> 8.956 um\n');
-fprintf('    10 um --> 10.12 um\n');
-fprintf('    12 um --> 12.01 um\n');
-fprintf('    15 um --> 14.97 um\n');
-diameter = input('Diameter of calibration particle (um)? : ');
+% fprintf('\nReference calibration particles:\n');
+% fprintf('     4 um --> 4.000 um\n');
+% fprintf('     5 um --> 5.000 um\n');
+% fprintf('     6 um --> 6.007 um\n');
+% fprintf('     7 um --> 6.976 um\n');
+% fprintf('     8 um --> 7.979 um\n');
+% fprintf('     9 um --> 8.956 um\n');
+% fprintf('    10 um --> 10.12 um\n');
+% fprintf('    12 um --> 12.01 um\n');
+% fprintf('    15 um --> 14.97 um\n');
+diameter_rnd = input('Diameter of calibration particle to nearest um? : ');
 
-fprintf('\nReference calibration particle densities:\n');
-fprintf('    Polystyrene --> 1.05 g/cm^3\n');
-density = input('Density of calibration particle (g/cm^3)? : ');
+vol_dict = get_bead_vols_coulter(); density_dict = get_bead_density();
+diameter = (vol_dict(diameter_rnd) * 3 / (4 * pi)) ^ (1/3) * 2; 
+density = density_dict(diameter_rnd); 
+
+
+
+
+% fprintf('\nReference calibration particle densities:\n');
+% fprintf('    Polystyrene --> 1.05 g/cm^3\n');
+% density = input('Density of calibration particle (g/cm^3)? : ');
 
 fprintf('\nReference fluid densities:\n');
 fprintf('    Water (25C) --> 0.997 g/cm^3\n');

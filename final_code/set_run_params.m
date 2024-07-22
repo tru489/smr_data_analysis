@@ -18,11 +18,11 @@ run_params.analysis_type.dens_trap_base_freq_recal = 0;
 
 % --------------------------- Analysis types ---------------------------
 % Calculates mass measurements from freq/time data
-run_params.analysis_type.mass = 0;
+run_params.analysis_type.mass = 1;
 % Calculates mass/volume from freq/time/fluorescence data
 run_params.analysis_type.fl_excl = 0;
 % Calculates density/volume from density trapping data
-run_params.analysis_type.density_trap = 1;
+run_params.analysis_type.density_trap = 0;
 % Calculates water content from density trapping with D2O (i.e. freq in two
 % fluids/time/fluorescence data)
 run_params.analysis_type.water_content = 0;
@@ -59,7 +59,7 @@ run_params.prefs.load_previous_curation = 0;
 % threshold; if there are conflicts between peaks detected from separate
 % offsets, preference is given to dataset with earlier index below (i.e. index 
 % 1 in multi_offset_threshold is given priority 1, index 2 is given 2, etc)
-run_params.prefs.multisz_bead_analysis = 1;
+run_params.prefs.multisz_bead_analysis = 0;
 run_params.bl_select.multi_offset_threshold = [25, 5, 2];
 
 %% Mass calibration preferences
@@ -69,8 +69,8 @@ run_params.mass_cal.save_peak_summary = 1;
 %% General density trapping analysis preferences
 % Valve state codes indicating whether fluid is in first or second density
 % trap fluid
-run_params.density_trap.fluid1_vstate = 7; % 11 nl
-run_params.density_trap.fluid2_vstate = 11; % 7 nl
+run_params.density_trap.fluid1_vstate = 11; % 11 nl
+run_params.density_trap.fluid2_vstate = 7; % 7 nl
 
 % Maximum backflush time allowed for reverse peaks to arrive
 run_params.density_trap.max_time_gap =  10000; % ms
@@ -209,7 +209,7 @@ run_params.fl_excl.thresh_base_height_range = 0.05; % nl 0.05
 
 % Use calibration with coulter counter data, or use manually input
 % parameter?
-run_params.fl_excl.use_coulter_calibration = 0;
+run_params.fl_excl.use_coulter_calibration = 1;
 run_params.fl_excl.manual_fl_per_au_cal_factor = 17.29258035;
 
 %% Visualization preferences

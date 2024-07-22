@@ -52,6 +52,7 @@ pass_struct.sampletime = [];
 pass_struct.sample_baseline_fits = [];
 pass_struct.left_bl_length = [];
 pass_struct.right_bl_length = [];
+pass_struct.peak_avg_time = [];
 
 i = 0;
 datasize = run_params.backend.datasize;
@@ -117,6 +118,8 @@ while(1)
         break
     end
 end
+pass_struct.peak_avg_time = pass_struct.peak_avg_time + init_time;
+
 
 close(gcf)
 

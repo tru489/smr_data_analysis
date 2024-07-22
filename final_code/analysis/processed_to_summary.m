@@ -107,20 +107,46 @@ for i=1:length(idx)
     end
 end
 
-variable_names = {'real_time_s', 'peak_time_s', 'peak_time_m', 'peak_time_h', ...
-        'avg_baseline', 'bl_slope', 'pk_fwhm', 'transit_t', 'valve_state', ...
-        'pk_order', 'segment_num', 'pk_ht1_hz', 'pk_ht2_hz', 'pk_ht3_hz', ...
-        'node_dev_1', 'node_dev_2', 'node_dev_mean', 'avg_pk_ht_hz', 'mass_pg'};
-summary_arr = [real_time_s, peak_time_s, peak_time_m, peak_time_h, ...
-    avg_baseline, bl_slope, pk_fwhm, transit_t, valve_state, pk_order, ...
-    segment_num, pk_ht1_hz, pk_ht2_hz, pk_ht3_hz, node_dev_1, node_dev_2, ...
-    node_dev_mean, avg_pk_ht_hz, mass_pg];
+summary_pks = table();
+
+summary_pks.real_time_s = real_time_s;
+summary_pks.peak_time_s = peak_time_s;
+summary_pks.peak_time_m = peak_time_m;
+summary_pks.peak_time_h = peak_time_h;
+summary_pks.avg_baseline = avg_baseline;
+summary_pks.bl_slope = bl_slope;
+summary_pks.pk_fwhm = pk_fwhm;
+summary_pks.transit_t = transit_t;
+summary_pks.valve_state = valve_state;
+summary_pks.pk_order = pk_order;
+summary_pks.segment_num = segment_num;
+summary_pks.pk_ht1_hz = pk_ht1_hz;
+summary_pks.pk_ht2_hz = pk_ht2_hz;
+summary_pks.pk_ht3_hz = pk_ht3_hz;
+summary_pks.node_dev_1 = node_dev_1;
+summary_pks.node_dev_2 = node_dev_2;
+summary_pks.node_dev_mean = node_dev_mean;
+summary_pks.avg_pk_ht_hz = avg_pk_ht_hz;
+summary_pks.mass_pg = mass_pg;
+
+% variable_names = {'real_time_s', 'peak_time_s', 'peak_time_m', 'peak_time_h', ...
+%         'avg_baseline', 'bl_slope', 'pk_fwhm', 'transit_t', 'valve_state', ...
+%         'pk_order', 'segment_num', 'pk_ht1_hz', 'pk_ht2_hz', 'pk_ht3_hz', ...
+%         'node_dev_1', 'node_dev_2', 'node_dev_mean', 'avg_pk_ht_hz', 'mass_pg'};
+% summary_arr = [real_time_s, peak_time_s, peak_time_m, peak_time_h, ...
+%     avg_baseline, bl_slope, pk_fwhm, transit_t, valve_state, pk_order, ...
+%     segment_num, pk_ht1_hz, pk_ht2_hz, pk_ht3_hz, node_dev_1, node_dev_2, ...
+%     node_dev_mean, avg_pk_ht_hz, mass_pg];
+
+% if ~isnan(mass_cal_factor)
+%     summary_pks = array2table(summary_arr, 'VariableNames', variable_names);
+% else
+%     summary_pks = array2table(summary_arr(:, 1:end-1), ...
+%         'VariableNames', variable_names(1:end-1));
+% end
 
 if ~isnan(mass_cal_factor)
-    summary_pks = array2table(summary_arr, 'VariableNames', variable_names);
-else
-    summary_pks = array2table(summary_arr(:, 1:end-1), ...
-        'VariableNames', variable_names(1:end-1));
+    summary_pks.mass_pg = mass_pg;
 end
 
 end
