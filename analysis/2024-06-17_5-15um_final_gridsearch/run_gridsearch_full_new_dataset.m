@@ -9,7 +9,7 @@ poolobj = parpool; % delete(gcp('nocreate'))
 
 %% Filepaths
 drive_lett = "A";
-save_path = drive_lett + ":\thomasu\raw_data\2024-06-28\dens_trap_fitting_gridsearch_5-15um";
+save_path = drive_lett + ":\thomasu\raw_data\2024-07-22\dens_trap_fitting_gridsearch_5-15um";
 log_path = drive_lett + ":\thomasu\raw_data\2024-06-17\5-15um_bead_trap\20240628.104421_density_trap_results\log.json";
 fwd_unpaired_path = drive_lett + ":\thomasu\raw_data\2024-06-17\5-15um_bead_trap\20240628.104421_density_trap_results\peakset_summary_unpaired_fluid1.csv";
 back_unpaired_path = drive_lett + ":\thomasu\raw_data\2024-06-17\5-15um_bead_trap\20240628.104421_density_trap_results\peakset_summary_unpaired_fluid2.csv";
