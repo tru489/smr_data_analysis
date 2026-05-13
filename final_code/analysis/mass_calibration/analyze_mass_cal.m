@@ -1,4 +1,4 @@
-function analyze_mass_cal(run_params, datasmr, save_dir, formatted_date)
+function analyze_mass_cal(run_params, datasmr, save_dir, bl_dens_cal_params, formatted_date)
 % Analyzes peakset data summary from a run of magnetic beads to product
 % calibration information. Requires input of bead/carrier fluid data.
 % Produces filtered peakset summary (optional) and json with important
@@ -10,7 +10,29 @@ function analyze_mass_cal(run_params, datasmr, save_dir, formatted_date)
 %   save_dir (str): dir in which to save json/filtered peakset summary
 %   formatted_date (str): formatted date string
 
+flag_calbr_type_invalid = 1;
+while flag_calbr_type_invalid
+    is_fl_dens_calibr = input('Use fluid density from calibration? (y/n): ','s');
+    is_fl_dens_calibr = lower(is_fl_dens_calibr);
+    if is_fl_dens_calibr == "y" || is_fl_dens_calibr == "n"
+        flag_calbr_type_invalid = 0;
+    end
+end
+
 freqs = datasmr.avg_pk_ht_hz;
+if is_fl_dens_calibr == 'y'
+    avg_baseline = mean(datasmr.avg_baseline);
+    
+    ref_freq = run_params.mass_cal.ref_freq;
+    intercept = bl_dens_cal_params.intercept;
+    slope = bl_dens_cal_params.slope;
+    
+    fl_density = (ref_freq - avg_baseline - intercept) / slope;
+else
+    fl_density = input('Fluid density (g/cm3): ');
+end
+
+
 
 % fprintf('\nReference calibration particles:\n');
 % fprintf('     4 um --> 4.000 um\n');
@@ -35,10 +57,10 @@ density = density_dict(diameter_rnd);
 % fprintf('    Polystyrene --> 1.05 g/cm^3\n');
 % density = input('Density of calibration particle (g/cm^3)? : ');
 
-fprintf('\nReference fluid densities:\n');
-fprintf('    Water (25C) --> 0.997 g/cm^3\n');
-fprintf('    1x PBS (25C) --> 1.0056 g/cm^3\n');
-fl_density = input('Fluid density (g/cm^3)? : ');
+% fprintf('\nReference fluid densities:\n');
+% fprintf('    Water (25C) --> 0.997 g/cm^3\n');
+% fprintf('    1x PBS (25C) --> 1.0056 g/cm^3\n');
+% fl_density = input('Fluid density (g/cm^3)? : ');
 
 fig1 = figure;
 histogram(freqs, 300)
@@ -106,6 +128,8 @@ datasmr_pg_masses.mass_pg = cal_freqs;
 if run_params.mass_cal.save_peak_summary
     writetable(datasmr_pg_masses, fullfile(save_dir, "peakset_summary.csv"))
 end
+
+fprintf('Fluid density from calculation: %.5f\n', fl_density)
 
 st.ground_truth_mass_pg = gt_mass;
 st.bead_diameter_um = diameter;

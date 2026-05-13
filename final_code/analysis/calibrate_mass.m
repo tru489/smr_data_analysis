@@ -7,7 +7,7 @@ function calibrate_mass(run_params)
 %% Load data files
 file_selection.valve_state = 0;
 file_selection.mass_cal = 0;
-file_selection.dens_bl_cal = 0;
+file_selection.dens_bl_cal = 1;
 file_selection.pmt_data = 0;
 file_selection.cc_data = 0;
 
@@ -15,6 +15,10 @@ file_selection.cc_data = 0;
 
 freqfile = parsed_files.freq_id;
 timefile = parsed_files.smr_time_id;
+bl_dens_cal_params = parsed_files.dens_bl_cal;
+
+run_params.mass_cal.ref_freq = ...
+    input('Input reference frequency for mass calibration: ');
 
 %% Add file to save processed data
 run_params.saving.save_abs_path = create_results_dir(run_params, data_dir);
@@ -40,7 +44,7 @@ end
 % Write curation indices used in this session to CSV
 writematrix(dataidx, fullfile(save_abs_path, 'curation_index.csv'))
 
-analyze_mass_cal(run_params, curated, save_abs_path, formatted_date)
+analyze_mass_cal(run_params, curated, save_abs_path, bl_dens_cal_params, formatted_date)
 param_log(run_params, save_abs_path)
 disp_dir_link(run_params.saving.save_abs_path)
 fclose('all');

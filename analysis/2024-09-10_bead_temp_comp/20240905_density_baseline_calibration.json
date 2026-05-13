@@ -1,0 +1,16 @@
+{
+  "date": "20240905",
+  "slope": -174312.26307490587,
+  "intercept": 1.3335929208278775E+6,
+  "soln_names": [
+    "diH2O",
+    "1pct NaCl",
+    "3pct NaCl",
+    "5pct NaCl",
+    "7pct NaCl",
+    "9pct NaCl",
+    "12pct NaCl",
+    "14pct NaCl",
+    "16pct NaCl"
+  ]
+}

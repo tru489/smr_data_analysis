@@ -82,9 +82,7 @@ while(1)
         valve_state = zeros(size(freq));
     end
     
-    if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
-        fprintf('    Processing segment %d of %d...\n', i, num_segments)
-    end
+    fprintf('    Processing segment %d of %d...\n', i+1, num_segments+1)
 
     if inv_peaks
         [datalast, pass_struct] = S1_PeakAnalysis_time(freq, time, ...

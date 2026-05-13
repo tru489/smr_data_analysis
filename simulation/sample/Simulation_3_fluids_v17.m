@@ -314,6 +314,8 @@ function [u,x,dudx] = U_n(L_cant,n,number_points,type_of_resonator)
         (sinh(lambda*x/L) - sin(lambda*x/L)))/(( (cosh(lambda) - cos(lambda)) - ((cosh(lambda)+cos(lambda))/(sinh(lambda)+sin(lambda))) * ...
         (sinh(lambda) - sin(lambda)))); % mode shape
         dudx_func=@(x,L,lambda) ((((lambda*cos((lambda*x)/L))/L - (lambda*cosh((lambda*x)/L))/L)*(cos(lambda) + cosh(lambda)))/(sin(lambda) + sinh(lambda)) + (lambda*sin((lambda*x)/L))/L + (lambda*sinh((lambda*x)/L))/L)/(cosh(lambda) - cos(lambda) + ((sin(lambda) - sinh(lambda))*(cos(lambda) + cosh(lambda)))/(sin(lambda) + sinh(lambda)));
+        L = L*1.05;
+        
         for i=1:length(x)
         u(i)=u_func(x(i),L,lambda);
         dudx(i)=dudx_func(x(i),L,lambda);

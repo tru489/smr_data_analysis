@@ -17,7 +17,7 @@ tab = readtable("A:\thomasu\raw_data\2024-04-29\7um_bead_cal_h2o_media\20240430.
 tab_sl = tab(tab.mass_pg > 4.3 & tab.mass_pg < 5, :);
 % figure; histogram(tab_sl.avg_pk_ht_hz, 150)
 avg_bl = mean(tab_sl.avg_baseline);
-adj_ref_h2o = h2o_ref - avg_bl; h2o_dens = (adj_ref_h2o - int) / slp;
+adj_ref_h2o = h2o_ref + avg_bl; h2o_dens = (adj_ref_h2o - int) / slp;
 freq_mean = mean(tab_sl.avg_pk_ht_hz);
 cal_factor = 4/3 * pi * (6.976 / 2)^3 * (1.05 - h2o_dens) / freq_mean;
 
@@ -56,7 +56,7 @@ for i = 1:length(h2o_paths)
     % figure; histogram(t.mass_pg, 50); title(labels(i))
     t.mass_pg = t.avg_pk_ht_hz * cal_factor;
     d2o_arrs{i} = t;
-    d2o_densities(i) = ((d2o_ref - mean(t.avg_baseline)) - int) / slp;
+    d2o_densities(i) = ((d2o_ref + mean(t.avg_baseline)) - int) / slp;
 end
 
 h2o_bm_arr = zeros(size(d2o_paths)); d2o_bm_arr = zeros(size(d2o_paths));
@@ -85,5 +85,5 @@ res_tab.d2o_media_density_gcm3 = d2o_dens_arr';
 res_tab.dry_density = dry_dens_arr';
 res_tab.dry_volume = dry_vol_arr';
 
-% writetable(res_tab, 'data\result_table.csv')
+writetable(res_tab, 'data\result_table.csv')
 

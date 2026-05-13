@@ -232,7 +232,7 @@ end
 
 %% Panel D
 if plot_panel_cd
-    [diam_dict, vol_dict] = get_bead_diams();
+    % [diam_dict, vol_dict] = get_bead_diams();
     % gt_vols = vol_dict([5:10, 12]); gt_dens = 1.05 * ones(size(gt_vols));
     
     fh_d = figure(Position=[680   458   656   420]); hold on;
@@ -321,7 +321,8 @@ function out_st = bead_data_from_fpath(dirpath, bm_midpts_h2o, bm_midpts_d2o, re
     d2o_hz = -d2o_data.avg_pk_ht_hz;
 
     bead_dens = 1.05;
-    [diam_dict, vol_dict] = get_bead_diams();
+    diam_dict = get_bead_diams();
+    vol_dict = get_bead_vols_coulter();
     diams = diam_dict([5:10, 12]); vols = vol_dict([5:10, 12]);
 
     

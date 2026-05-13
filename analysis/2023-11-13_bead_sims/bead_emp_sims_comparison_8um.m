@@ -44,6 +44,7 @@ for i = 1:4
     sim_tab = readtable(bead_data_arr(2*i));
     [h, p_val] = vartest2(emp_tab.mass_pg, sim_tab.mass_pg);
     fprintf('Empirical std: %.3f\n', std(emp_tab.mass_pg))
+    fprintf('Empirical cv: %.3f\n', std(emp_tab.mass_pg) / mean(emp_tab.mass_pg))
     fprintf('Simulated std: %.3f\n', std(sim_tab.mass_pg))
     fprintf('F-test p-value for whether 2 samples came from different distributions (sample %d): p = %.6f\n', i, p_val)
     fprintf('\n')

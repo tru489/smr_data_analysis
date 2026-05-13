@@ -73,11 +73,9 @@ if ~rev_peaks_invert
     
     % ---------------- Density trap peak pairing ----------------
     fluid1_datasmr = curated(curated.valve_state == dt.fluid1_vstate, :);
-    fluid1_pk_direct = 1;
     fluid2_datasmr = curated(curated.valve_state == dt.fluid2_vstate, :);
-    fluid2_pk_direct = 1;
     paired_datasmr = pair_density_trap(run_params, fluid1_datasmr, ...
-        fluid1_pk_direct, fluid2_datasmr, fluid2_pk_direct, cal_params, ...
+        fluid2_datasmr, cal_params, ...
         bl_dens_cal_params, run_params.density_trap.fl1_ref_freq, ...
         run_params.density_trap.fl2_ref_freq);
 else
@@ -95,7 +93,7 @@ else
     [processed_freq_data_fl2, pass_struct_fluid2, init_time_fluid2] = analyze_freq_data(run_params, ...
         freqfile, timefile, vsfile, 1);
     summary_pks_fluid2 = processed_to_summary(run_params, processed_freq_data_fl2, ...
-        init_time_fluid2, cal_params.cal_factor_pg_per_hz);
+        init_time_fluid2, cal_params.cal_factor_pg_per_hz, 1);
 
     save(fullfile(save_abs_path, 'pass_struct_fluid1.mat'), "pass_struct_fluid1")
     save(fullfile(save_abs_path, 'pass_struct_fluid2.mat'), "pass_struct_fluid2")
@@ -129,11 +127,9 @@ else
     
     % ---------------- Density trap peak pairing ----------------
     fluid1_datasmr = curated_fluid1(curated_fluid1.valve_state == dt.fluid1_vstate, :);
-    fluid1_pk_direct = 1;
     fluid2_datasmr = curated_fluid2(curated_fluid2.valve_state == dt.fluid2_vstate, :);
-    fluid2_pk_direct = -1;
     paired_datasmr = pair_density_trap(run_params, fluid1_datasmr, ...
-        fluid1_pk_direct, fluid2_datasmr, fluid2_pk_direct, cal_params, ...
+        fluid2_datasmr, cal_params, ...
         bl_dens_cal_params, run_params.density_trap.fl1_ref_freq, ...
         run_params.density_trap.fl2_ref_freq);
     curated = [curated_fluid1; curated_fluid2];

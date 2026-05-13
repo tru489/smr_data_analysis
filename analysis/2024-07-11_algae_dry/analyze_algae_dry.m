@@ -61,7 +61,7 @@ ref_freqs = zeros(size(pths));
 for i = 1:length(pths)
     tab_t = readtable(pths{i});
     tab_t = tab_t(tab_t.mass_pg > thresh, :);
-    ref_freqs(i) = rf - mean(tab_t.avg_baseline);
+    ref_freqs(i) = rf + mean(tab_t.avg_baseline);
 end
 
 dens = (mean(ref_freqs) - intc) / slope;

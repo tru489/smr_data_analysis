@@ -1,5 +1,5 @@
 function summary_pks = processed_to_summary(run_params, processed_freq_data, init_time, ...
-    mass_cal_factor)
+    mass_cal_factor, inv_peak)
 % Takes processed frequency data from preprocessing scripts and converts to
 % summary of peak data used for downstream analysis
 %
@@ -13,6 +13,8 @@ function summary_pks = processed_to_summary(run_params, processed_freq_data, ini
 %   mass_cal_factor (double): pg to Hz mass calibration factor. Optional;
 %       if not specified than this function is likely being called for mass
 %       calibration
+%   inv_peak (bool): whether peaks are inverted (i.e. particles are less
+%       dense than fluid)
 % Returns:
 %   summary_pks (table): table containing summary peak information
 
@@ -21,6 +23,7 @@ arguments
     processed_freq_data
     init_time
     mass_cal_factor = NaN
+    inv_peak = 0
 end
 
 %% Convert processed individual peak data to peak summary data
@@ -113,21 +116,36 @@ summary_pks.real_time_s = real_time_s;
 summary_pks.peak_time_s = peak_time_s;
 summary_pks.peak_time_m = peak_time_m;
 summary_pks.peak_time_h = peak_time_h;
-summary_pks.avg_baseline = avg_baseline;
-summary_pks.bl_slope = bl_slope;
+
+if inv_peak
+    summary_pks.bl_slope = bl_slope;
+    summary_pks.avg_baseline = avg_baseline;
+    summary_pks.pk_ht1_hz = -pk_ht1_hz;
+    summary_pks.pk_ht2_hz = -pk_ht2_hz;
+    summary_pks.pk_ht3_hz = -pk_ht3_hz;
+    summary_pks.node_dev_1 = -node_dev_1;
+    summary_pks.node_dev_2 = -node_dev_2;
+    summary_pks.node_dev_mean = -node_dev_mean;
+    summary_pks.avg_pk_ht_hz = -avg_pk_ht_hz;
+    summary_pks.mass_pg = -mass_pg;
+else 
+    summary_pks.bl_slope = -bl_slope;
+    summary_pks.avg_baseline = -avg_baseline;
+    summary_pks.pk_ht1_hz = pk_ht1_hz;
+    summary_pks.pk_ht2_hz = pk_ht2_hz;
+    summary_pks.pk_ht3_hz = pk_ht3_hz;
+    summary_pks.node_dev_1 = node_dev_1;
+    summary_pks.node_dev_2 = node_dev_2;
+    summary_pks.node_dev_mean = node_dev_mean;
+    summary_pks.avg_pk_ht_hz = avg_pk_ht_hz;
+    summary_pks.mass_pg = mass_pg;
+end
+
 summary_pks.pk_fwhm = pk_fwhm;
 summary_pks.transit_t = transit_t;
 summary_pks.valve_state = valve_state;
 summary_pks.pk_order = pk_order;
 summary_pks.segment_num = segment_num;
-summary_pks.pk_ht1_hz = pk_ht1_hz;
-summary_pks.pk_ht2_hz = pk_ht2_hz;
-summary_pks.pk_ht3_hz = pk_ht3_hz;
-summary_pks.node_dev_1 = node_dev_1;
-summary_pks.node_dev_2 = node_dev_2;
-summary_pks.node_dev_mean = node_dev_mean;
-summary_pks.avg_pk_ht_hz = avg_pk_ht_hz;
-summary_pks.mass_pg = mass_pg;
 
 % variable_names = {'real_time_s', 'peak_time_s', 'peak_time_m', 'peak_time_h', ...
 %         'avg_baseline', 'bl_slope', 'pk_fwhm', 'transit_t', 'valve_state', ...
