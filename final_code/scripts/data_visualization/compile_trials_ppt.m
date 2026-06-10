@@ -10,7 +10,7 @@ destination_path = "A:\thomasu\presentations\compiled_figs";
 start_dir = "A:\thomasu\raw_data";
 
 %% Create presentation
-run_params = set_run_params;
+run_params = load_run_params;
 
 accept = 0;
 while ~accept

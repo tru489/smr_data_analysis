@@ -1,0 +1,115 @@
+# =============================================================================
+# SMR Data Analysis — Run Configuration Template
+# =============================================================================
+# Copy this file to config.yaml (repo root) and edit for your run.
+# config.yaml is gitignored and never committed.
+# This template IS tracked by git.
+# =============================================================================
+
+# --- Which analysis to run (exactly one must be true) ---
+analysis_type:
+  # Calibration types
+  mass_calibration: false              # mass calibration from bead data
+  base_freq_density_calibration: false # density calibration from two fluids
+  dens_trap_base_freq_recal: false     # empirical correction of density baseline cal using multi-size beads
+  # Analysis types
+  mass: true                           # mass measurements from freq/time data
+  fl_excl: false                       # mass/volume from freq/time/fluorescence data
+  density_trap: false                  # density/volume from density trapping data
+  water_content: false                 # water content from density trapping with D2O
+
+# --- Analysis mode ---
+analysis_params:
+  analysismode: true       # true = rapid (runs through all peaks); false = stops at each peak
+  dispprogress: false      # display progress plots (forced true if analysismode is false)
+  analysismode_pmt: true
+  dispprogress_pmt: false
+  verbose: false           # intermediate plots/print statements in fast mode
+
+# --- General peak analysis preferences ---
+prefs:
+  manual_curation: false
+  load_previous_curation: false  # load curation from a previous session (requires same peak selection params)
+  multisz_bead_analysis: false   # iterate multiple offset thresholds for stiff multi-size beads
+  multi_offset_threshold: [25, 5, 2]  # thresholds tried in priority order when multisz_bead_analysis is true
+
+# --- Mass calibration preferences ---
+mass_cal:
+  save_peak_summary: true  # save raw peak summary data
+
+# --- Density trapping ---
+density_trap:
+  fluid1_vstate: 7          # valve state code for first density fluid (11 nl)
+  fluid2_vstate: 11         # valve state code for second density fluid (7 nl)
+  max_time_gap: 10000       # max backflush time for reverse peaks to arrive (ms)
+  min_forward_gap: 200      # max time gap between adjacent forward peaks (ms)
+  use_multi_bead_pair: true # pair multiple beads within a single trap
+  candidate_pair_dens_window: [1.03, 1.07]  # acceptable density range for paired peaks (g/cm3)
+  save_unpaired: true       # save unpaired peak data
+
+# --- Peak curation thresholds ---
+curation:
+  pk_imbal_thresh: 0.5    # max fractional difference in secondary peak heights vs. avg of peaks 1&3
+  nod_imbal_thresh: 0.5   # max fractional difference in node heights vs. avg of peaks 1&3
+  nod_dev_thresh: 0.4     # max fractional average node deviation vs. avg of peaks 1&3
+  disp_bl_fit: true       # display baseline fit for each peak during curation
+  auto_rejection: true    # automatically reject peaks based on auto-reject criteria
+
+# --- Baseline selection ---
+# When use_presets is true, the values below are overridden by presets in
+# modify_backend_params based on analysis type.
+bl_select:
+  use_presets: true
+  estimated_datapoints: 500   # estimated datapoints for full transit
+  estimated_noise: 0.5        # estimate of baseline noise level
+  sgolay_length_idx: 4        # Savitzky-Golay filter length index
+  segment_threshold: 200      # lower threshold for half-length of single-peak data segment (datapoints)
+  diff_threshold: 0.05        # derivative threshold to find flat part of baseline
+  med_filt_wd: 30             # median filter window (removes flat part in anti-node)
+  bs_dev_thres: 0.5           # derivative threshold for anti-node removal
+  unqPeakDist: 300            # distance over which 2nd mode peaks are unique
+  offset_input: 3             # baseline offset threshold for peak selection
+  edgethres: 0.12             # first point left/right of secondary peaks at 40% of avg baseline
+  stdevmultiplier: 3          # allow 102% of minimum standard deviation
+  diffmultiplier: 1           # allow 90% of deviation from mean freq closest to 2ndary peaks
+  winsize: 50                 # number of points searching for baseline collection
+
+# --- Fluorescence exclusion ---
+fl_excl:
+  save_peakset_summ: true
+  n_pmt_channel: 5
+  Peak_length: 50             # estimated peak width (datapoints)
+  datasize: 20000             # segment size (~32 MB)
+  Baseline_rough_cutoff: -20  # PMT minimum voltage quality check
+  med_filt_length: 5          # full PMT data median filter window
+  moving_average_window_size: 5
+  med_filt_window_size: 150   # baseline median filter window; keep equal to 3 * Peak_length
+  min_distance_btw_peaks: 50
+  uni_peak_range_ext: 5       # datapoints from each side of detection cutoff included in peak
+  uni_peak_baseline_window_size: 100  # datapoints from each side of cutoff for local baseline
+  fxm_baseline_choice: 2      # 1=left, 2=right, 3=average (choose based on proximity to cantilever)
+  # Detection threshold per PMT channel (units: std dev of baseline amplitude)
+  # Channel 1 (fluorescence exclusion): use negative value
+  # Downstream channels: use positive value
+  detect_thresh_pmt: [-1.2, 10, 10, 10, 10]
+  upstream_compen: 0          # upstream channel compensation (0 = none)
+  thresh_baselineDiff_over_sig: 0.05  # left-right baseline height diff / signal amplitude cutoff
+  thresh_base_slope: 0.002    # left-right baseline slope cutoff
+  thresh_base_height_range: 0.5
+  use_coulter_calibration: true
+  manual_fl_per_au_cal_factor: 0  # used only if use_coulter_calibration is false
+
+# --- Visualization ---
+vis:
+  disp_fig_windows: false
+  open_ppt: false
+  ppt_template_abs_path: "final_code/visualization/template.potx"  # relative to repo root
+
+# --- Directory formatting ---
+dir_formatting:
+  default_cal_path: "final_code/data_dir_formatting/default_cal_paths.json"  # relative to repo root
+
+# --- Backend ---
+# Internal data processing parameters. Unlikely to need changing.
+backend:
+  datasize: 2000000  # frequency data segment size (datapoints); = 2e6

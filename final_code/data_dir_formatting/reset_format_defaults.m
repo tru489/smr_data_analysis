@@ -4,7 +4,7 @@
 
 close all;
 
-run_params = set_run_params();
+run_params = load_run_params();
 
 default_cal_path = run_params.dir_formatting.default_cal_path;
 

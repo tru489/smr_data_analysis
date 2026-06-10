@@ -4,7 +4,7 @@
 
 close all;
 
-run_params = set_run_params();
+run_params = load_run_params();
 
 data_dir = uigetdir('A:\thomasu\raw_data');
 

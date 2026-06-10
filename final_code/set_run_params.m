@@ -1,8 +1,11 @@
 function run_params = set_run_params()
+% DEPRECATED: Superseded by load_run_params() + config.yaml.
+% Kept for reference only. Edit config.yaml, not this file.
+%
 % Set parameters for running preprocessing scripts for SMR data,
 % SMR/fluorescence data, density trapping, etc.
-% 
-% Returns: 
+%
+% Returns:
 %   run_params (struct): all parameters necessary for running
 %       peak analysis scripts
 
