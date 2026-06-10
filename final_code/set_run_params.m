@@ -128,7 +128,7 @@ run_params.bl_select.bs_dev_thres = 0.5; % 0.5
 % Distance over which there are unique 2nd mode peaks
 run_params.bl_select.unqPeakDist = 300; % 250 % 300
 % Baseline offset threshold to select for peaks
-run_params.bl_select.offset_input = 30; % 3
+run_params.bl_select.offset_input = 3; % 3
 
 % Choose the first point left/right of the secondary peaks 40% percent of the average baseline freqvalue
 run_params.bl_select.edgethres = 0.12;
