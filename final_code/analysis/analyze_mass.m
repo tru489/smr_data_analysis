@@ -1,8 +1,18 @@
-function analyze_mass(run_params)
+function analyze_mass(run_params, data_dir, rev_peaks_invert)
 % Processing/analysis of binary files for SMR mass measurements
-% 
+%
 % Arguments:
 %   run_params (struct): running parameters for preprocessing code
+%   data_dir (string, optional): path to data directory. If omitted, a
+%       uigetdir dialog opens. Pass when calling from batch_main.m.
+%   rev_peaks_invert (0|1, optional): whether peaks are inverted. If
+%       omitted (-1), the user is prompted interactively.
+
+arguments
+    run_params
+    data_dir          string = ""
+    rev_peaks_invert  double {mustBeMember(rev_peaks_invert, [-1, 0, 1])} = -1
+end
 
 %% Load data files
 file_selection.valve_state = 1;
@@ -11,25 +21,27 @@ file_selection.dens_bl_cal = 0;
 file_selection.pmt_data = 0;
 file_selection.cc_data = 0;
 
-[parsed_files, data_dir, formatted_date] = parse_dir_contents(file_selection);
+[parsed_files, data_dir, formatted_date] = parse_dir_contents(file_selection, data_dir);
 
 freqfile = parsed_files.freq_id;
 timefile = parsed_files.smr_time_id;
 vsfile = parsed_files.vs_id;
 mass_cal_params = parsed_files.mass_cal;
 
-%% Ask user whether peaks are inverted
-flag = 1;
-while flag
-    peak_reversal = input('Are peaks inverted? (y/n): ', 's');
-    if lower(peak_reversal) == 'y'
-        flag = 0;
-        rev_peaks_invert = 1;
-    elseif lower(peak_reversal) == 'n'
-        flag = 0;
-        rev_peaks_invert = 0;
-    else
-        disp('Invalid input.')
+%% Ask user whether peaks are inverted (skipped when called programmatically)
+if rev_peaks_invert == -1
+    flag = 1;
+    while flag
+        peak_reversal = input('Are peaks inverted? (y/n): ', 's');
+        if lower(peak_reversal) == 'y'
+            flag = 0;
+            rev_peaks_invert = 1;
+        elseif lower(peak_reversal) == 'n'
+            flag = 0;
+            rev_peaks_invert = 0;
+        else
+            disp('Invalid input.')
+        end
     end
 end
 

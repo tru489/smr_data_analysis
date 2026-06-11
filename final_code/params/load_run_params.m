@@ -6,7 +6,7 @@ function run_params = load_run_params(config_path)
 %
 % Arguments:
 %   config_path (string, optional): absolute path to config YAML file.
-%       Defaults to config.yaml in final_code/ (next to this file's parent dir).
+%       Defaults to config.yaml at the repo root.
 % Returns:
 %   run_params (struct): all parameters for running analysis scripts,
 %       with the same field structure as previously returned by set_run_params().
@@ -47,9 +47,9 @@ run_params.backend         = cfg.backend;
 
 %% Resolve relative paths to absolute paths
 run_params.vis.ppt_template_abs_path = ...
-    fullfile(final_code_dir, run_params.vis.ppt_template_abs_path);
+    fullfile(repo_root, run_params.vis.ppt_template_abs_path);
 run_params.dir_formatting.default_cal_path = ...
-    fullfile(final_code_dir, run_params.dir_formatting.default_cal_path);
+    fullfile(repo_root, run_params.dir_formatting.default_cal_path);
 
 %% Normalize arrays to row vectors (yaml toolbox may return column vectors)
 run_params.fl_excl.detect_thresh_pmt = ...

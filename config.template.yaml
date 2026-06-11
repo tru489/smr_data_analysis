@@ -54,6 +54,8 @@ curation:
   nod_dev_thresh: 0.4     # max fractional average node deviation vs. avg of peaks 1&3
   disp_bl_fit: true       # display baseline fit for each peak during curation
   auto_rejection: true    # automatically reject peaks based on auto-reject criteria
+  grid_rows: 10           # rows in manual curation grid (peaks per page = grid_rows * grid_cols)
+  grid_cols: 10           # columns in manual curation grid
 
 # --- Baseline selection ---
 # When use_presets is true, the values below are overridden by presets in
