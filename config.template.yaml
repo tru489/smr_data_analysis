@@ -62,15 +62,15 @@ curation:
 # modify_backend_params based on analysis type.
 bl_select:
   use_presets: true
-  estimated_datapoints: 500   # estimated datapoints for full transit
-  estimated_noise: 0.5        # estimate of baseline noise level
+  estimated_datapoints: 250   # estimated datapoints for full transit
+  estimated_noise: 4        # estimate of baseline noise level
   sgolay_length_idx: 4        # Savitzky-Golay filter length index
   segment_threshold: 200      # lower threshold for half-length of single-peak data segment (datapoints)
-  diff_threshold: 0.05        # derivative threshold to find flat part of baseline
-  med_filt_wd: 30             # median filter window (removes flat part in anti-node)
+  diff_threshold: 0.005        # derivative threshold to find flat part of baseline
+  med_filt_wd: 200             # median filter window (removes flat part in anti-node)
   bs_dev_thres: 0.5           # derivative threshold for anti-node removal
-  unqPeakDist: 300            # distance over which 2nd mode peaks are unique
-  offset_input: 3             # baseline offset threshold for peak selection
+  unqPeakDist: 250            # distance over which 2nd mode peaks are unique
+  offset_input: 2             # baseline offset threshold for peak selection
   edgethres: 0.12             # first point left/right of secondary peaks at 40% of avg baseline
   stdevmultiplier: 3          # allow 102% of minimum standard deviation
   diffmultiplier: 1           # allow 90% of deviation from mean freq closest to 2ndary peaks
