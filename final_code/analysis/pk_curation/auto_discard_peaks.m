@@ -1,6 +1,9 @@
 function idx_discard = auto_discard_peaks(run_params, discard_params, datasmr)
 % Based on several parameters, selects peaks for automatic discard. Returns
-% an array of indices of the peaks to discard.
+% an array of indices of the peaks to discard. A peak is discarded if it
+% exceeds the peak-imbalance, node-imbalance, or node-deviation thresholds,
+% or if either node_dev_1 or node_dev_2 is exactly 0 (a missing/failed
+% node-deviation measurement).
 %
 % Arguments:
 %   run_params (struct): running parameters necessary for analysis
@@ -31,11 +34,16 @@ pk_imbal_mask = abs((pk_ht1 - pk_ht3) ./ avg_pk_ht) > pk_imbal_thresh;
 nod_imbal_mask = abs((node_dev_1 - node_dev_2) ./ avg_pk_ht) > ...
     nod_imbal_thresh;
 
-% Node deviation mask; average node deviation between nodes 1 and 2 / 
+% Node deviation mask; average node deviation between nodes 1 and 2 /
 % average of peak 1 and 3 height
 nod_dev_mask = abs(node_dev_mean ./ avg_pk_ht) > nod_dev_thresh;
 
+% Zero node-deviation mask; node_dev_1 or node_dev_2 is exactly 0,
+% indicating a missing/failed node-deviation measurement
+zero_node_dev_mask = (node_dev_1 == 0) | (node_dev_2 == 0);
+
 % Indices to discard
-idx_discard = find(pk_imbal_mask | nod_imbal_mask | nod_dev_mask);
+idx_discard = find(pk_imbal_mask | nod_imbal_mask | nod_dev_mask | ...
+    zero_node_dev_mask);
 
 end

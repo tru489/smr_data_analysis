@@ -75,7 +75,6 @@ final_code/
   visualization/        Figures and report generation
   scripts/              Utility scripts (e.g. raw data visualization)
 helpers/                Shared utilities (file selection, JSON, etc.)
-analysis/               Dated, experiment-specific analysis scripts (one-offs)
 simulation/             SMR signal simulation (independent of the analysis path)
 ```
 

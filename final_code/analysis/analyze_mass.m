@@ -82,7 +82,7 @@ writematrix(dataidx, fullfile(save_abs_path, 'curation_index.csv'))
 
 stats_cell = get_mass_stats(run_params, summary_pks, curated, ...
     mass_cal_params.cal_factor_pg_per_hz);
-fig_path_cell = plot_mass_results(run_params, curated);
+fig_path_cell = plot_mass_results(run_params, summary_pks, dataidx);
 
 analysis_name = get_analysis_type(run_params);
 presentation_title = string(formatted_date) + " " + string(analysis_name);
