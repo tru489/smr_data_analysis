@@ -1,2 +1,0 @@
-Average r-squared: 0.758101
-Average percent CV: 0.432%
