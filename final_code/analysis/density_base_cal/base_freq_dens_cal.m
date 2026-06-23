@@ -9,8 +9,8 @@ function base_freq_dens_cal(run_params)
 
 % Get calibration file
 disp("Getting density baseline calibration data...")
-[path, dir, ind] = uigetfile('../*.csv', ...
-    "Select density baseline calibration file", ' ');
+[path, dir, ind] = uigetfile('*.csv', ...
+    "Select density baseline calibration file");
 if ind ~= 0
     data_table = readtable(fullfile(dir, path));
 else
