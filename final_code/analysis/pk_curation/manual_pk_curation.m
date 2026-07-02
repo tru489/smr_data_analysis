@@ -174,8 +174,10 @@ setappdata(fig, 'peaks_per_pg',   peaks_per_pg);
 setappdata(fig, 'run_params',     run_params);
 setappdata(fig, 'status_txt',     status_txt);
 setappdata(fig, 'page_txt',       page_txt);
-setappdata(fig, 'axes_handles',   []);
+setappdata(fig, 'cells',          []);
 
+% Build the grid of axes + line objects ONCE; paging only updates their data
+build_grid(fig);
 render_page(fig);
 
 uiwait(fig);
@@ -189,43 +191,26 @@ end
 
 
 % -------------------------------------------------------------------------
-%  Render current page
+%  Build the persistent grid of axes + line objects (runs once)
 % -------------------------------------------------------------------------
 
-function render_page(fig)
-peaks_data   = getappdata(fig, 'peaks_data');
-manual_idx   = getappdata(fig, 'manual_idx');
-rejection_mask = getappdata(fig, 'rejection_mask');
-current_page = getappdata(fig, 'current_page');
-n_pages      = getappdata(fig, 'n_pages');
+function build_grid(fig)
 grid_rows    = getappdata(fig, 'grid_rows');
 grid_cols    = getappdata(fig, 'grid_cols');
 peaks_per_pg = getappdata(fig, 'peaks_per_pg');
 run_params   = getappdata(fig, 'run_params');
-status_txt   = getappdata(fig, 'status_txt');
-page_txt     = getappdata(fig, 'page_txt');
 
-% Delete previous subplot axes
-old_axes = getappdata(fig, 'axes_handles');
-for k = 1:numel(old_axes)
-    if isvalid(old_axes(k)), delete(old_axes(k)); end
-end
-
-% Indices into manual_idx for this page
-page_start = (current_page - 1) * peaks_per_pg + 1;
-page_end   = min(current_page * peaks_per_pg, numel(manual_idx));
-page_manual_pos = page_start:page_end;   % positions within manual_idx
-n_on_page  = numel(page_manual_pos);
+disp_bl_fit = run_params.curation.disp_bl_fit;
 
 % Reserve bottom strip for buttons (plot area = top 93%)
 plot_top    = 0.07;
 plot_height = 0.93;
 
-axes_handles = gobjects(1, n_on_page);
-for k = 1:n_on_page
-    global_idx = manual_idx(page_manual_pos(k));
-    pk = peaks_data(global_idx);
+cells = struct('ax', cell(1, peaks_per_pg), 'l_freq', cell(1, peaks_per_pg), ...
+    'l_bl', cell(1, peaks_per_pg), 'l_left', cell(1, peaks_per_pg), ...
+    'l_right', cell(1, peaks_per_pg), 'title', cell(1, peaks_per_pg));
 
+for k = 1:peaks_per_pg
     % Compute subplot position manually to stay within plot area
     col = mod(k-1, grid_cols);
     row = floor((k-1) / grid_cols);
@@ -237,32 +222,99 @@ for k = 1:n_on_page
     ax = axes('Parent', fig, ...
         'Position', [ax_x + 0.005, ax_y + 0.005, ax_w - 0.01, ax_h - 0.02], ...
         'XTick', [], 'YTick', [], ...
-        'UserData', global_idx, ...
+        'UserData', [], ...
         'ButtonDownFcn', @on_peak_click);
     hold(ax, 'on');
 
-    lh = plot(ax, pk.time, pk.freq, 'b', 'LineWidth', 0.8);
-    lh.ButtonDownFcn = @on_peak_click;
+    l_freq = plot(ax, NaN, NaN, 'b', 'LineWidth', 0.8);
+    l_freq.ButtonDownFcn = @on_peak_click;
 
-    if run_params.curation.disp_bl_fit
-        lh2 = plot(ax, pk.time, pk.bl_fit, 'r--', 'LineWidth', 0.8);
-        lh2.ButtonDownFcn = @on_peak_click;
+    if disp_bl_fit
+        l_bl = plot(ax, NaN, NaN, 'r--', 'LineWidth', 0.8);
+        l_bl.ButtonDownFcn = @on_peak_click;
+    else
+        l_bl = gobjects(1);
     end
 
-    lh3 = plot(ax, pk.time(1:numel(pk.left_bl)),         pk.left_bl,  'g', 'LineWidth', 1);
-    lh4 = plot(ax, pk.time(end-numel(pk.right_bl)+1:end), pk.right_bl, 'g', 'LineWidth', 1);
-    lh3.ButtonDownFcn = @on_peak_click;
-    lh4.ButtonDownFcn = @on_peak_click;
+    l_left  = plot(ax, NaN, NaN, 'g', 'LineWidth', 1);
+    l_right = plot(ax, NaN, NaN, 'g', 'LineWidth', 1);
+    l_left.ButtonDownFcn  = @on_peak_click;
+    l_right.ButtonDownFcn = @on_peak_click;
 
-    % Peak number label (relative to all peaks, not manual_idx)
-    t = title(ax, sprintf('%d', global_idx), 'FontSize', 7, 'Interpreter', 'none');
+    t = title(ax, '', 'FontSize', 7, 'Interpreter', 'none');
     t.ButtonDownFcn = @on_peak_click;
 
-    set_subplot_color(ax, rejection_mask(global_idx));
-    axes_handles(k) = ax;
+    cells(k).ax      = ax;
+    cells(k).l_freq  = l_freq;
+    cells(k).l_bl    = l_bl;
+    cells(k).l_left  = l_left;
+    cells(k).l_right = l_right;
+    cells(k).title   = t;
 end
 
-setappdata(fig, 'axes_handles', axes_handles);
+setappdata(fig, 'cells', cells);
+
+end
+
+
+% -------------------------------------------------------------------------
+%  Render current page (updates pre-built objects in place)
+% -------------------------------------------------------------------------
+
+function render_page(fig)
+peaks_data   = getappdata(fig, 'peaks_data');
+manual_idx   = getappdata(fig, 'manual_idx');
+rejection_mask = getappdata(fig, 'rejection_mask');
+current_page = getappdata(fig, 'current_page');
+n_pages      = getappdata(fig, 'n_pages');
+peaks_per_pg = getappdata(fig, 'peaks_per_pg');
+run_params   = getappdata(fig, 'run_params');
+status_txt   = getappdata(fig, 'status_txt');
+page_txt     = getappdata(fig, 'page_txt');
+cells        = getappdata(fig, 'cells');
+
+disp_bl_fit = run_params.curation.disp_bl_fit;
+
+% Indices into manual_idx for this page
+page_start = (current_page - 1) * peaks_per_pg + 1;
+page_end   = min(current_page * peaks_per_pg, numel(manual_idx));
+page_manual_pos = page_start:page_end;   % positions within manual_idx
+n_on_page  = numel(page_manual_pos);
+
+for k = 1:peaks_per_pg
+    c = cells(k);
+    if k <= n_on_page
+        global_idx = manual_idx(page_manual_pos(k));
+        pk = peaks_data(global_idx);
+
+        set(c.l_freq, 'XData', pk.time, 'YData', pk.freq, 'Visible', 'on');
+        if disp_bl_fit
+            set(c.l_bl, 'XData', pk.time, 'YData', pk.bl_fit, 'Visible', 'on');
+        end
+        set(c.l_left,  'XData', pk.time(1:numel(pk.left_bl)), ...
+            'YData', pk.left_bl, 'Visible', 'on');
+        set(c.l_right, 'XData', pk.time(end-numel(pk.right_bl)+1:end), ...
+            'YData', pk.right_bl, 'Visible', 'on');
+
+        % Peak number label (relative to all peaks, not manual_idx)
+        c.ax.UserData  = global_idx;
+        c.title.String = sprintf('%d', global_idx);
+        set(c.ax, 'Visible', 'on', 'XLimMode', 'auto', 'YLimMode', 'auto');
+
+        set_subplot_color(c.ax, rejection_mask(global_idx));
+    else
+        % Hide unused trailing cells on the last page
+        set(c.l_freq, 'Visible', 'off');
+        if disp_bl_fit
+            set(c.l_bl, 'Visible', 'off');
+        end
+        set(c.l_left,  'Visible', 'off');
+        set(c.l_right, 'Visible', 'off');
+        c.title.String = '';
+        c.ax.UserData  = [];
+        set(c.ax, 'Visible', 'off');
+    end
+end
 
 % Update text labels
 n_kept = sum(~rejection_mask(manual_idx));
@@ -305,6 +357,7 @@ if isempty(ax), return; end
 
 fig        = ax.Parent;
 peak_idx   = ax.UserData;
+if isempty(peak_idx), return; end  % hidden trailing cell — ignore clicks
 rejection_mask = getappdata(fig, 'rejection_mask');
 rejection_mask(peak_idx) = ~rejection_mask(peak_idx);
 setappdata(fig, 'rejection_mask', rejection_mask);
