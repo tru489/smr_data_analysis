@@ -215,6 +215,13 @@ for i = 1:length(peak_idx)
                     pk_xdata, pk_ydata, local_baseline, local_peaks, ...
                     local_peakwidth);
 
+                % Skip peaksets too narrow for a valid polynomial fit (e.g.
+                % junk peaks); S2_PeakFitter returns [] when the fit window 
+                % has too few datapoints for the fit order
+                if isempty(peak_fit_metrics)
+                    continue;
+                end
+
                 local_pkidx_poly = peak_fit_metrics.pkidx_poly;
                 local_pkht_poly = peak_fit_metrics.pkht_poly;
                 local_apkidx_poly = peak_fit_metrics.apkidx_poly;

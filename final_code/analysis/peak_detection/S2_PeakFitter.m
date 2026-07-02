@@ -15,7 +15,9 @@ function peak_fit_metrics = S2_PeakFitter(run_params, xdata, ydata, ...
 %       subtracting the two edge markers of the peakset
 % Returns:
 %   peak_fit_metrics (struct): contains metrics from this particular peak
-%       fit. In particular:
+%       fit, or [] if the peakset is too narrow for a valid polynomial fit
+%       (fit window has <= pk_poly_order datapoints) and should be discarded.
+%       When populated, contains:
 %           pkidx_poly (array(double)): indices of peaks within data slice
 %               for this peakset (from polynomial fit)
 %           pkht_poly (array(double)): heights of peaks within this peakset
@@ -124,8 +126,22 @@ if dispprogress
 end
 
 %% Polynomial fitting of peaks
+% Order of the polynomial used to fit peaks and antipeaks
+pk_poly_order = 4;
+
 % Width of segment of peak to be fitted
 pk_fit_wd = round(peakwidth / 30);
+
+% Reject the peakset if its fit window (2*pk_fit_wd + 1 datapoints) has at
+% most as many points as the polynomial order. Such narrow peaksets (e.g.
+% dissolution-in-transit artifacts) yield a non-unique polynomial fit (the
+% MATLAB:polyfit:PolyNotUnique warning) and unreliable peak metrics, so the
+% entire peakset is discarded by returning an empty result that the caller
+% (S1_PeakAnalysis_time) skips.
+if (2 * pk_fit_wd + 1) <= pk_poly_order
+    peak_fit_metrics = [];
+    return
+end
 
 pkidx_poly = zeros(1, length(peaks));
 apkidx_poly = zeros(1, length(antipeaks));
@@ -141,7 +157,7 @@ for i = 1:length(peaks)
     pk_fit_segy = freqdata(pk_fit_segx);
 
     % Perform quarternary polynomial fit
-    polypkeq = polyfit(1:length(pk_fit_segx), pk_fit_segy, 4);
+    polypkeq = polyfit(1:length(pk_fit_segx), pk_fit_segy, pk_poly_order);
 
     % Evaluate peak fit
     peakfit = polyval(polypkeq, 1:length(pk_fit_segx));
@@ -182,7 +198,8 @@ for i = 1:length(antipeaks)
     
     if run_params.backend.antipeak_polyfit
         % Perform quarternary polynomial fit to fit antipeaks
-        polyantipkeq = polyfit((-pk_fit_wd:pk_fit_wd), antipk_fit_segy, 4);
+        polyantipkeq = polyfit((-pk_fit_wd:pk_fit_wd), antipk_fit_segy, ...
+            pk_poly_order);
     
         % Evaluate peak fit
         antipeakfit = polyval(polyantipkeq, -pk_fit_wd:pk_fit_wd);
