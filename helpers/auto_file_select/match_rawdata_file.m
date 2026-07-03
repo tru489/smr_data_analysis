@@ -39,8 +39,12 @@ if ~multiple_files
         file_id = fopen(fullfile(dirpath, fname), 'r', 'b');
         date_cell = regexp(fname, '^\d+', 'match');
         date_str = date_cell{1};
+    elseif isempty(fname_match)
+        error("RuntimeError: No " + analysis_name + " file detected in " + ...
+            dirpath)
     else
-        error("RuntimeError: Multiple " + analysis_name + " files detected")
+        error("RuntimeError: Multiple " + analysis_name + " files detected in " + ...
+            dirpath)
     end
 else
     fname_match = cellfun(@(x) x, fname_match);
