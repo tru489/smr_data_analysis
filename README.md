@@ -107,6 +107,7 @@ you already have with `ver` at the MATLAB prompt.
 
 | Dependency | Type | Needed when |
 |---|---|---|
+| **Image Processing Toolbox** | MathWorks toolbox | **Required for the gating GUI (`gate_mass_results.m`)** — uses `drawrectangle` / `images.roi` for the draggable gate rectangles. Not needed by the core analysis pipeline. |
 | **Statistics and Machine Learning Toolbox** | MathWorks toolbox | Fluorescence-exclusion analysis (`fl_excl`) and Coulter calibration — uses `prctile`, `ksdensity` |
 | **MATLAB Report Generator** | MathWorks toolbox | Generating PowerPoint/PDF reports (`final_code/visualization/reports/`, `fl_excl` reports) — uses `mlreportgen.*` |
 | **DSP System Toolbox** | MathWorks toolbox | Running the `simulation/` signal generators only — uses `dsp.ColoredNoise` (not needed for analyzing real data) |
@@ -184,3 +185,65 @@ raw frequency data for inspection.
 Depending on the analysis type, the pipeline writes per-cell summary tables
 (mass, volume, density, node deviation, etc.) into a results subdirectory of the
 input folder, plus optional figures and PowerPoint/PDF reports.
+
+---
+
+## Buoyant-mass gating GUI (`gate_mass_results.m`)
+
+A standalone, interactive GUI (repo root) for **post-analysis gating** of buoyant
+mass data across a whole experiment — a flow-cytometry-style tool to keep only the
+cell populations you want, one gated CSV per sample.
+
+**Requires the Image Processing Toolbox** (see dependencies above).
+
+### Input layout
+
+Point it at a **superdirectory** whose immediate subfolders are individual samples,
+each containing a mass-results folder produced by the analysis pipeline:
+
+```
+<superdir>/
+  <sample_1>/<yyyyMMdd.HHmmss>_mass_results/<...>.csv
+  <sample_2>/<yyyyMMdd.HHmmss>_mass_results/<...>.csv
+  ...
+```
+
+The script auto-discovers each sample's mass-results CSV (choosing the **most
+recent** `_mass_results` folder if several exist, and skipping `curation_index`
+and macOS `._*` files). Subfolders with no mass-results folder are skipped.
+
+### How to run
+
+Run `gate_mass_results` (no arguments). By default a **folder picker** opens to
+choose the superdirectory. To skip the picker, paste a path into the `superdir`
+CONFIG line near the top of the script. Works cross-platform (Windows/macOS) and
+adapts to any window/monitor size.
+
+### Workflow
+
+1. **Selection window** — a multi-select list of samples.
+   - **Select all** selects every sample (to gate them all together).
+   - **Set gate** opens the gating window on the selected samples.
+   - **Browse** opens a read-only overlay viewer (sidebar checkboxes show/hide each
+     sample across all plots) so you can inspect the currently ungated samples.
+   - **Undo** rolls back the most recent gating action.
+   - **Done** writes the gated CSVs and closes.
+2. **Gating window** — the selected samples are overlaid (one color each) across
+   four plots:
+   - Buoyant-mass histogram (`mass_pg`)
+   - Average baseline vs time (`avg_baseline` vs `peak_time_m`)
+   - Baseline-slope histogram (`bl_slope`)
+   - Average node-deviation histogram (`node_dev_mean`)
+
+   Click a **Gate: …** button to draw a **draggable rectangle** on that plot; drag
+   to adjust and the pooled accepted count updates live. Gate any subset of the four
+   plots — **gates are optional per plot**, and the accepted set is the logical
+   **AND** across only the plots that have a gate (histograms use the rectangle's
+   x-range; the scatter uses the full box). **Apply** filters each selected sample by
+   the same gates; **Reset gates** clears them; **Back** cancels.
+
+### Output
+
+For each gated sample, a `<yyyyMMdd.HHmmss>_gated_mass_results.csv` (the gated subset
+of rows, all columns preserved) is written **inside that sample's folder**, alongside
+its `_mass_results` folder. Ungated samples produce no file.
