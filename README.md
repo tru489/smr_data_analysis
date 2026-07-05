@@ -39,7 +39,10 @@ rest. The supported analyses (exactly one is enabled per run via
 3. **Parameter handling** — `final_code/params/` loads the config, applies
    analysis-type-specific presets (`modify_backend_params.m`), and validates.
 4. **Curation** — `final_code/analysis/pk_curation/` auto-rejects low-quality
-   peaks (`auto_discard_peaks.m`) and/or supports interactive manual curation.
+   peaks (`auto_discard_peaks.m`) and/or opens the manual curation GUI: a
+   paginated grid of peaks (configurable N×M via `curation.grid_rows/grid_cols`
+   in `config.yaml`) where you click subplots to toggle rejection and navigate
+   pages with arrow keys or `n`/`p`. Press `d` or click Done to confirm.
 5. **Calibration & summary** — converts peak heights to physical units and writes
    per-cell summary tables.
 6. **Visualization / reports** — `final_code/visualization/` produces figures and
@@ -231,19 +234,26 @@ adapts to any window/monitor size.
 2. **Gating window** — the selected samples are overlaid (one color each) across
    four plots:
    - Buoyant-mass histogram (`mass_pg`)
-   - Average baseline vs time (`avg_baseline` vs `peak_time_m`)
+   - Average baseline vs time scatter (`avg_baseline` vs `peak_time_m`)
    - Baseline-slope histogram (`bl_slope`)
    - Average node-deviation histogram (`node_dev_mean`)
 
-   Click a **Gate: …** button to draw a **draggable rectangle** on that plot; drag
-   to adjust and the pooled accepted count updates live. Gate any subset of the four
-   plots — **gates are optional per plot**, and the accepted set is the logical
-   **AND** across only the plots that have a gate (histograms use the rectangle's
-   x-range; the scatter uses the full box). **Apply** filters each selected sample by
-   the same gates; **Reset gates** clears them; **Back** cancels.
+   Click a **Gate: …** button to gate that plot. Interaction depends on plot type:
+
+   - **Histograms** — click once to set the lower cutoff (red dashed line), click
+     again to set the upper cutoff (blue dashed line). A green shaded band marks the
+     accepted region. Click the button again to redraw.
+   - **Scatter** — drag a rectangle on the plot; resize or reposition it freely.
+
+   Gate any subset of the four plots (gates are optional per plot). The accepted set
+   is the logical **AND** across all plots that have a gate. The status bar shows
+   the running accepted count as you draw. **Apply** filters each selected sample by
+   the current gates; **Reset gates** clears all gates; **Back** cancels.
 
 ### Output
 
-For each gated sample, a `<yyyyMMdd.HHmmss>_gated_mass_results.csv` (the gated subset
-of rows, all columns preserved) is written **inside that sample's folder**, alongside
-its `_mass_results` folder. Ungated samples produce no file.
+For each gated sample, a folder `<yyyyMMdd.HHmmss>_gated_mass_results/` is created
+**inside that sample's subdirectory**, containing a CSV named
+`<sample_name>_bm_gated.csv` with the gated subset of rows (all columns preserved).
+All samples gated in the same session share the same timestamp folder name.
+Ungated samples produce no output.

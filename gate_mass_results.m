@@ -143,7 +143,7 @@ end
 function build_selection_window(samples)
 fig = figure('Name', 'Gate mass results — sample selection', ...
     'NumberTitle', 'off', 'MenuBar', 'none', 'ToolBar', 'none', ...
-    'Color', 'w', 'Resizable', 'on', 'Units', 'pixels', ...
+    'Color', 'w', 'Resize', 'on', 'Units', 'pixels', ...
     'Position', [0 0 520 640], 'CloseRequestFcn', @(s,e) delete(s));
 movegui(fig, 'center');
 
@@ -172,18 +172,21 @@ bw = 0.16; gap = 0.02; y = 0.03; h = 0.06; xs = 0.05;
 uicontrol(fig, 'Style', 'pushbutton', 'Units', 'normalized', ...
     'Position', [xs y bw h], 'String', 'Select all', 'FontSize', 10, ...
     'Callback', @(s,e) on_select_all(fig));
-uicontrol(fig, 'Style', 'pushbutton', 'Units', 'normalized', ...
+btn_gate = uicontrol(fig, 'Style', 'pushbutton', 'Units', 'normalized', ...
     'Position', [xs+(bw+gap) y bw h], 'String', 'Set gate', 'FontSize', 10, ...
     'FontWeight', 'bold', 'Callback', @(s,e) on_set_gate(fig));
-uicontrol(fig, 'Style', 'pushbutton', 'Units', 'normalized', ...
+btn_browse = uicontrol(fig, 'Style', 'pushbutton', 'Units', 'normalized', ...
     'Position', [xs+2*(bw+gap) y bw h], 'String', 'Browse', 'FontSize', 10, ...
     'Callback', @(s,e) on_browse(fig));
 uicontrol(fig, 'Style', 'pushbutton', 'Units', 'normalized', ...
     'Position', [xs+3*(bw+gap) y bw h], 'String', 'Undo', 'FontSize', 10, ...
     'Callback', @(s,e) on_undo(fig));
-uicontrol(fig, 'Style', 'pushbutton', 'Units', 'normalized', ...
+btn_done = uicontrol(fig, 'Style', 'pushbutton', 'Units', 'normalized', ...
     'Position', [xs+4*(bw+gap) y bw h], 'String', 'Done', 'FontSize', 10, ...
     'Callback', @(s,e) on_done(fig));
+setappdata(fig, 'btn_gate', btn_gate);
+setappdata(fig, 'btn_browse', btn_browse);
+setappdata(fig, 'btn_done', btn_done);
 
 refresh_list(fig);
 end
@@ -245,7 +248,11 @@ if isempty(sel_global)
 end
 samples = getappdata(fig, 'samples');
 
+set_main_buttons(fig, 'off');
 result = gating_window(samples(sel_global));
+figure(fig);
+set_main_buttons(fig, 'on');
+
 if ~result.applied
     return
 end
@@ -271,7 +278,10 @@ if isempty(ungated)
     warndlg('No ungated samples to browse.', 'Browse');
     return
 end
+set_main_buttons(fig, 'off');
 browse_window(samples(ungated));
+figure(fig);
+set_main_buttons(fig, 'on');
 end
 
 
@@ -291,6 +301,7 @@ end
 
 
 function on_done(fig)
+set_main_buttons(fig, 'off');   % prevent double-click while dialog is open
 samples = getappdata(fig, 'samples');
 gated = getappdata(fig, 'gated_tbls');
 gi = find(~cellfun('isempty', gated));
@@ -300,15 +311,20 @@ if isempty(gi)
         'Done', 'Close', 'Cancel', 'Cancel');
     if strcmp(q, 'Close')
         delete(fig);
+    else
+        set_main_buttons(fig, 'on');
     end
     return
 end
 
 ts = char(string(datetime('now', 'TimeZone', 'local', 'Format', 'yyyyMMdd.HHmmss')));
+folder_name = [ts '_gated_mass_results'];
 summary = {'Gated files written:'};
 for k = 1:numel(gi)
     i = gi(k);
-    out = fullfile(samples(i).subdir, [ts '_gated_mass_results.csv']);
+    out_dir = fullfile(samples(i).subdir, folder_name);
+    mkdir(out_dir);
+    out = fullfile(out_dir, [samples(i).name '_bm_gated.csv']);
     writetable(gated{i}, out);
     summary{end+1} = sprintf('%s:  %d -> %d rows', samples(i).name, ...
         height(samples(i).tbl), height(gated{i})); %#ok<AGROW>
@@ -318,6 +334,18 @@ end
 
 msgbox(summary, 'Done');
 delete(fig);
+end
+
+
+function set_main_buttons(fig, state)
+if ~isvalid(fig), return; end
+for f = {'btn_gate', 'btn_browse', 'btn_done'}
+    b = getappdata(fig, f{1});
+    if ~isempty(b) && isvalid(b)
+        b.Enable = state;
+    end
+end
+drawnow;
 end
 
 
@@ -366,7 +394,7 @@ for p = 1:4
         else
             lo = min(pooled); hi = max(pooled);
             if hi <= lo, hi = lo + 1; end
-            edges = linspace(lo, hi, 41);
+            edges = linspace(lo, hi, 101);
         end
         for si = 1:n
             v = samples(si).tbl.(spec.col);
@@ -391,7 +419,9 @@ for p = 1:4
     xlabel(ax, spec.xlabel, 'FontSize', 11);
     title(ax, spec.title, 'FontSize', 12);
     if p == 1 && n > 1
-        legend(ax, 'show', 'Location', 'best', 'FontSize', 8);
+        lg = legend(ax, 'show', 'Location', 'northeast', 'FontSize', 8);
+        lg.AutoUpdate = 'off';
+        lg.Interpreter = 'none';
     end
 end
 end
@@ -406,8 +436,8 @@ n = numel(sel_samples);
 colors = lines(max(n, 1));
 
 gf = figure('Name', 'Set gate', 'NumberTitle', 'off', 'MenuBar', 'none', ...
-    'ToolBar', 'none', 'Color', 'w', 'Resizable', 'on', 'Units', 'pixels', ...
-    'Position', [0 0 1100 800], 'CloseRequestFcn', @(s,e) uiresume(s));
+    'ToolBar', 'none', 'Color', 'w', 'Resize', 'on', 'Units', 'pixels', ...
+    'Position', [0 0 1100 800], 'CloseRequestFcn', @(s,e) gate_close(s));
 movegui(gf, 'center');
 
 plot_panel = uipanel('Parent', gf, 'Units', 'normalized', ...
@@ -431,6 +461,7 @@ setappdata(gf, 'rois', cell(1, 4));
 setappdata(gf, 'st_handle', st);
 setappdata(gf, 'applied', false);
 setappdata(gf, 'masks', {});
+setappdata(gf, 'done', false);
 
 labels = {'Gate: mass', 'Gate: baseline', 'Gate: slope', 'Gate: node dev'};
 bw = 0.145;
@@ -444,13 +475,18 @@ uicontrol(gf, 'Style', 'pushbutton', 'Units', 'normalized', ...
     'FontSize', 9, 'Callback', @(s,e) gate_reset(gf));
 uicontrol(gf, 'Style', 'pushbutton', 'Units', 'normalized', ...
     'Position', [0.745 0.005 0.10 0.05], 'String', 'Back', ...
-    'FontSize', 9, 'Callback', @(s,e) uiresume(gf));
+    'FontSize', 9, 'Callback', @(s,e) gate_close(gf));
 uicontrol(gf, 'Style', 'pushbutton', 'Units', 'normalized', ...
     'Position', [0.855 0.005 0.125 0.05], 'String', 'Apply', ...
     'FontSize', 10, 'FontWeight', 'bold', 'Callback', @(s,e) gate_apply(gf));
 
 gate_update_status(gf);
-uiwait(gf);
+% Loop because drawrectangle internally calls uiresume on the same figure,
+% which would prematurely exit a single uiwait. Only exit when 'done' is
+% explicitly set by Apply, Back, or the window close button.
+while isvalid(gf) && ~getappdata(gf, 'done')
+    uiwait(gf);
+end
 
 if isvalid(gf)
     result.applied = getappdata(gf, 'applied');
@@ -463,54 +499,151 @@ end
 end
 
 
-function gate_draw(gf, p)
-axs = getappdata(gf, 'axs');
-rois = getappdata(gf, 'rois');
-if ~isempty(rois{p}) && isvalid(rois{p})
-    delete(rois{p});
+% ---- ROI helpers (work for both drawrectangle objects and hist range structs) ----
+
+function tf = roi_is_set(r)
+if isempty(r), tf = false; return; end
+if isstruct(r), tf = strcmp(r.type, 'range'); return; end
+tf = isvalid(r);
 end
-roi = drawrectangle(axs(p), 'Color', [0.15 0.15 0.15], 'LineWidth', 1);
-rois{p} = roi;
+
+function clear_roi(r)
+if isempty(r), return; end
+if isstruct(r)
+    for k = 1:numel(r.lines)
+        if ~isempty(r.lines{k}) && isvalid(r.lines{k}), delete(r.lines{k}); end
+    end
+    if ~isempty(r.patch) && isvalid(r.patch), delete(r.patch); end
+else
+    if isvalid(r), delete(r); end
+end
+end
+
+% -------------------------------------------------------------------------
+
+function gate_draw(gf, p)
+specs = getappdata(gf, 'specs');
+axs  = getappdata(gf, 'axs');
+rois = getappdata(gf, 'rois');
+
+% Cancel any pending histogram click mode and clear existing gate for this plot
+setappdata(gf, 'hist_state', []);
+set(gf, 'WindowButtonDownFcn', '');
+clear_roi(rois{p});
+rois{p} = [];
 setappdata(gf, 'rois', rois);
-addlistener(roi, 'MovingROI', @(s,e) gate_update_status(gf));
-addlistener(roi, 'ROIMoved', @(s,e) gate_update_status(gf));
-gate_update_status(gf);
+
+spec = specs{p};
+if strcmp(spec.type, 'hist')
+    % Click-based: first click = lower cutoff, second click = upper cutoff
+    setappdata(gf, 'hist_state', struct('p', p, 'state', 0, 'lo', NaN, ...
+        'lines', {{}}, 'patch', []));
+    set(gf, 'WindowButtonDownFcn', @(s,e) gate_hist_click(gf, p));
+    st = getappdata(gf, 'st_handle');
+    st.String = sprintf('[%s]  Click to set lower cutoff', spec.title);
+else
+    % Scatter: interactive rectangle
+    roi = drawrectangle(axs(p), 'Color', [0.15 0.15 0.15], 'LineWidth', 1);
+    rois = getappdata(gf, 'rois');
+    rois{p} = roi;
+    setappdata(gf, 'rois', rois);
+    addlistener(roi, 'MovingROI', @(s,e) gate_update_status(gf));
+    addlistener(roi, 'ROIMoved', @(s,e) gate_update_status(gf));
+    gate_update_status(gf);
+end
+end
+
+
+function gate_hist_click(gf, p)
+if ~isvalid(gf), return; end
+hs = getappdata(gf, 'hist_state');
+if isempty(hs) || hs.p ~= p, return; end
+
+% Only respond to clicks within the target axes
+axs = getappdata(gf, 'axs');
+ax  = axs(p);
+clicked_ax = ancestor(gf.CurrentObject, 'axes');
+if isempty(clicked_ax) || ~isequal(clicked_ax, ax), return; end
+
+x  = ax.CurrentPoint(1, 1);
+xl = ax.XLim;
+if x < xl(1) || x > xl(2), return; end
+
+st    = getappdata(gf, 'st_handle');
+specs = getappdata(gf, 'specs');
+title = specs{p}.title;
+
+if hs.state == 0
+    hs.lo = x;
+    hs.state = 1;
+    hs.lines{1} = xline(ax, x, '--r', sprintf('%.3g', x), ...
+        'LabelVerticalAlignment', 'bottom', 'LabelHorizontalAlignment', 'right', ...
+        'FontSize', 8, 'HandleVisibility', 'off');
+    st.String = sprintf('[%s]  Lower: %.4g  —  click to set upper cutoff', title, x);
+
+elseif hs.state == 1
+    if x <= hs.lo
+        st.String = sprintf('[%s]  Upper must be > lower (%.4g) — click again', title, hs.lo);
+        setappdata(gf, 'hist_state', hs);
+        drawnow; return
+    end
+    hs.hi = x;
+    hs.state = 2;
+    hs.lines{2} = xline(ax, x, '--b', sprintf('%.3g', x), ...
+        'LabelVerticalAlignment', 'bottom', 'LabelHorizontalAlignment', 'left', ...
+        'FontSize', 8, 'HandleVisibility', 'off');
+    yl = ax.YLim;
+    hs.patch = patch(ax, [hs.lo hs.hi hs.hi hs.lo], [yl(1) yl(1) yl(2) yl(2)], ...
+        'g', 'FaceAlpha', 0.12, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+    uistack(hs.patch, 'bottom');
+
+    rois = getappdata(gf, 'rois');
+    rois{p} = struct('type', 'range', 'lo', hs.lo, 'hi', hs.hi, ...
+        'lines', {hs.lines}, 'patch', hs.patch);
+    setappdata(gf, 'rois', rois);
+    setappdata(gf, 'hist_state', []);
+    set(gf, 'WindowButtonDownFcn', '');
+    gate_update_status(gf);
+    drawnow;
+    return
+end
+setappdata(gf, 'hist_state', hs);
+drawnow;
 end
 
 
 function gate_reset(gf)
 rois = getappdata(gf, 'rois');
 for p = 1:4
-    if ~isempty(rois{p}) && isvalid(rois{p})
-        delete(rois{p});
-    end
+    clear_roi(rois{p});
     rois{p} = [];
 end
 setappdata(gf, 'rois', rois);
+setappdata(gf, 'hist_state', []);
+set(gf, 'WindowButtonDownFcn', '');
 gate_update_status(gf);
 end
 
 
 function m = gate_compute_masks(gf)
 specs = getappdata(gf, 'specs');
-sel = getappdata(gf, 'sel_samples');
-rois = getappdata(gf, 'rois');
+sel   = getappdata(gf, 'sel_samples');
+rois  = getappdata(gf, 'rois');
 n = numel(sel);
 m = cell(1, n);
 for si = 1:n
     t = sel(si).tbl;
     mask = true(height(t), 1);
     for p = 1:4
-        if isempty(rois{p}) || ~isvalid(rois{p})
-            continue
-        end
-        pos = rois{p}.Position;   % [x y w h]
+        r = rois{p};
+        if ~roi_is_set(r), continue; end
         spec = specs{p};
-        xr = sort([pos(1), pos(1) + pos(3)]);
         if strcmp(spec.type, 'hist')
             v = t.(spec.col);
-            mask = mask & v >= xr(1) & v <= xr(2);
+            mask = mask & v >= r.lo & v <= r.hi;
         else
+            pos = r.Position;   % [x y w h]
+            xr = sort([pos(1), pos(1) + pos(3)]);
             yr = sort([pos(2), pos(2) + pos(4)]);
             xv = t.(spec.xcol); yv = t.(spec.ycol);
             mask = mask & xv >= xr(1) & xv <= xr(2) & yv >= yr(1) & yv <= yr(2);
@@ -522,7 +655,10 @@ end
 
 
 function gate_update_status(gf)
-st = getappdata(gf, 'st_handle');
+% Don't overwrite status text while histogram click mode is active
+hs = getappdata(gf, 'hist_state');
+if ~isempty(hs) && hs.state < 2, return; end
+st   = getappdata(gf, 'st_handle');
 rois = getappdata(gf, 'rois');
 m = gate_compute_masks(gf);
 acc = 0; tot = 0;
@@ -530,7 +666,7 @@ for si = 1:numel(m)
     acc = acc + sum(m{si});
     tot = tot + numel(m{si});
 end
-ngates = sum(cellfun(@(r) ~isempty(r) && isvalid(r), rois));
+ngates = sum(cellfun(@roi_is_set, rois));
 st.String = sprintf('Gates set: %d / 4     Accepted (pooled): %d / %d', ...
     ngates, acc, tot);
 end
@@ -538,7 +674,7 @@ end
 
 function gate_apply(gf)
 rois = getappdata(gf, 'rois');
-ngates = sum(cellfun(@(r) ~isempty(r) && isvalid(r), rois));
+ngates = sum(cellfun(@roi_is_set, rois));
 if ngates == 0
     q = questdlg('No gates drawn. Accept all points for the selected samples?', ...
         'No gates', 'Accept all', 'Cancel', 'Cancel');
@@ -548,6 +684,15 @@ if ngates == 0
 end
 setappdata(gf, 'masks', gate_compute_masks(gf));
 setappdata(gf, 'applied', true);
+setappdata(gf, 'done', true);
+uiresume(gf);
+end
+
+
+function gate_close(gf)
+if isvalid(gf) && isappdata(gf, 'done')
+    setappdata(gf, 'done', true);
+end
 uiresume(gf);
 end
 
@@ -561,7 +706,7 @@ n = numel(samples);
 colors = lines(max(n, 1));
 
 bf = figure('Name', 'Browse samples', 'NumberTitle', 'off', 'MenuBar', 'none', ...
-    'ToolBar', 'none', 'Color', 'w', 'Resizable', 'on', 'Units', 'pixels', ...
+    'ToolBar', 'none', 'Color', 'w', 'Resize', 'on', 'Units', 'pixels', ...
     'Position', [0 0 1200 800], 'CloseRequestFcn', @(s,e) uiresume(s));
 movegui(bf, 'center');
 
