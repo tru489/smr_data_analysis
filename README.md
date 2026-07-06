@@ -110,7 +110,6 @@ you already have with `ver` at the MATLAB prompt.
 
 | Dependency | Type | Needed when |
 |---|---|---|
-| **Image Processing Toolbox** | MathWorks toolbox | **Required for the gating GUI (`gate_mass_results.m`)** — uses `drawrectangle` / `images.roi` for the draggable gate rectangles. Not needed by the core analysis pipeline. |
 | **Statistics and Machine Learning Toolbox** | MathWorks toolbox | Fluorescence-exclusion analysis (`fl_excl`) and Coulter calibration — uses `prctile`, `ksdensity` |
 | **MATLAB Report Generator** | MathWorks toolbox | Generating PowerPoint/PDF reports (`final_code/visualization/reports/`, `fl_excl` reports) — uses `mlreportgen.*` |
 | **DSP System Toolbox** | MathWorks toolbox | Running the `simulation/` signal generators only — uses `dsp.ColoredNoise` (not needed for analyzing real data) |
@@ -194,10 +193,8 @@ input folder, plus optional figures and PowerPoint/PDF reports.
 ## Buoyant-mass gating GUI (`gate_mass_results.m`)
 
 A standalone, interactive GUI (repo root) for **post-analysis gating** of buoyant
-mass data across a whole experiment — a flow-cytometry-style tool to keep only the
-cell populations you want, one gated CSV per sample.
-
-**Requires the Image Processing Toolbox** (see dependencies above).
+mass data across a whole experiment — a tool to keep only the cell populations you
+want, one gated CSV per sample. Requires no extra toolboxes.
 
 ### Input layout
 
@@ -231,24 +228,27 @@ adapts to any window/monitor size.
      sample across all plots) so you can inspect the currently ungated samples.
    - **Undo** rolls back the most recent gating action.
    - **Done** writes the gated CSVs and closes.
-2. **Gating window** — the selected samples are overlaid (one color each) across
-   four plots:
-   - Buoyant-mass histogram (`mass_pg`)
-   - Average baseline vs time scatter (`avg_baseline` vs `peak_time_m`)
-   - Baseline-slope histogram (`bl_slope`)
-   - Average node-deviation histogram (`node_dev_mean`)
+2. **Gating window** — the selected samples are overlaid as histograms (one color
+   each) across four plots:
+   - Buoyant mass (`mass_pg`)
+   - Normalized baseline — `avg_baseline` divided, per sample, by the mean baseline
+     over the **first 10%** of that sample's run (by `peak_time_m`); the x-axis is
+     labeled as a fraction of the first-10% mean.
+   - Baseline slope (`bl_slope`)
+   - Average node deviation (`node_dev_mean`)
 
-   Click a **Gate: …** button to gate that plot. Interaction depends on plot type:
+   Every plot is gated the same way: click its **Gate: …** button, then click once
+   to set the lower cutoff (red dashed line) and again to set the upper cutoff (blue
+   dashed line). A green band marks the accepted range; click the button again to
+   redraw. Gate any subset of the four plots (gates are optional per plot) — the
+   accepted set is the logical **AND** across the plots that have a cutoff, and the
+   status bar shows the running accepted count. **Apply** filters each selected
+   sample by the current gates; **Reset gates** clears them; **Back** cancels.
 
-   - **Histograms** — click once to set the lower cutoff (red dashed line), click
-     again to set the upper cutoff (blue dashed line). A green shaded band marks the
-     accepted region. Click the button again to redraw.
-   - **Scatter** — drag a rectangle on the plot; resize or reposition it freely.
-
-   Gate any subset of the four plots (gates are optional per plot). The accepted set
-   is the logical **AND** across all plots that have a gate. The status bar shows
-   the running accepted count as you draw. **Apply** filters each selected sample by
-   the current gates; **Reset gates** clears all gates; **Back** cancels.
+   Each histogram has **x-limit boxes** (`x min` / `x max`, blank = auto) beneath it
+   that zoom and re-bin that plot within the given range — useful for seeing the
+   distribution shape when data span a large range. X-limits only affect the view;
+   gates always apply to the true data values.
 
 ### Output
 

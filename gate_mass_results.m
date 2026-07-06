@@ -3,23 +3,29 @@
 %
 % Walks a superdirectory whose immediate subfolders are individual samples,
 % each containing a "<timestamp>_mass_results" folder with a peak-summary CSV
-% (the newest is used if several exist). Lets you draw flow-cytometry-style
-% gates across four plots and writes a gated CSV back into each sample folder.
+% (the newest is used if several exist). Overlays the selected samples across
+% four histograms and lets you keep only the cells you want, writing a gated
+% CSV per sample.
 %
 % Expected layout:
 %   <superdir>/<sample>/<yyyyMMdd.HHmmss>_mass_results/<...>.csv
 %
-% Output (per gated sample):
-%   <superdir>/<sample>/<yyyyMMdd.HHmmss>_gated_mass_results.csv
+% Output (per gated sample): a "<yyyyMMdd.HHmmss>_gated_mass_results" folder
+% inside the sample folder, containing "<sample>_bm_gated.csv".
 %
 % Controls (selection window): Select all, Set gate, Browse, Undo, Done.
-% Gating window: draw one draggable rectangle per plot (optional per plot);
-% the accepted set is the logical AND across the plots that have a gate.
+% Gating window: for any histogram, click a Gate button then click a lower and
+% an upper cutoff on that plot (optional per plot); the accepted set is the
+% logical AND across the plots that have a cutoff. Each histogram has x-limit
+% boxes to zoom/re-bin for visibility when data span a large range.
 %
-% DEPENDENCY: Image Processing Toolbox (drawrectangle / images.roi.Rectangle).
+% The four histograms are: buoyant mass, normalized baseline (avg_baseline
+% divided by the mean baseline over the first 10% of the run), baseline slope,
+% and average node deviation.
 %
 % Runs cross-platform (Windows/macOS) and is monitor-size agnostic (figures
-% are centered with movegui and laid out in normalized units).
+% are centered with movegui and laid out in normalized units). No extra
+% toolboxes are required.
 
 script_dir = fileparts(mfilename('fullpath'));
 addpath(genpath(fullfile(script_dir, 'helpers')));
@@ -43,11 +49,6 @@ run_app(char(superdir));
 %  App entry
 % =========================================================================
 function run_app(superdir)
-if isempty(which('drawrectangle'))
-    error('gate_mass_results:noIPT', ['This tool requires the Image ' ...
-        'Processing Toolbox (function "drawrectangle" was not found).']);
-end
-
 samples = discover_mass_results(superdir);
 if isempty(samples)
     errordlg(['No samples with a mass_pg CSV were found under:' newline ...
@@ -353,12 +354,14 @@ end
 %  Plot specifications (shared by gating + browse windows)
 % =========================================================================
 function specs = make_plotspecs()
+% All four plots are histograms. Plot 2 is a derived quantity: avg_baseline
+% normalized to the mean baseline over the first 10% of the run.
 specs = {
     struct('type', 'hist', 'col', 'mass_pg', ...
         'xlabel', 'Buoyant mass (pg)', 'title', 'Buoyant mass')
-    struct('type', 'scatter', 'xcol', 'peak_time_m', 'ycol', 'avg_baseline', ...
-        'xlabel', 'Relative peak time (min)', 'ylabel', 'Average baseline (Hz)', ...
-        'title', 'Average baseline vs time')
+    struct('type', 'hist', 'derived', 'baseline_norm', ...
+        'xlabel', 'Normalized baseline (frac. of first-10% mean)', ...
+        'title', 'Normalized baseline')
     struct('type', 'hist', 'col', 'bl_slope', ...
         'xlabel', 'Baseline slope', 'title', 'Baseline slope')
     struct('type', 'hist', 'col', 'node_dev_mean', ...
@@ -367,9 +370,35 @@ specs = {
 end
 
 
+function v = values_for_spec(t, spec)
+% Return the vector of values a plot/gate operates on for one sample table.
+if isfield(spec, 'derived') && strcmp(spec.derived, 'baseline_norm')
+    bl = t.avg_baseline;
+    tm = t.peak_time_m;
+    good = isfinite(bl) & isfinite(tm);
+    ref = NaN;
+    if any(good)
+        tmin = min(tm(good));
+        tmax = max(tm(good));
+        thr = tmin + 0.10 * (tmax - tmin);         % first 10% of the run
+        ref_mask = good & (tm <= thr);
+        if ~any(ref_mask), ref_mask = good; end     % fallback: whole run
+        ref = mean(bl(ref_mask));
+    end
+    if ~isfinite(ref) || ref == 0
+        v = bl;                                     % fallback: no normalization
+    else
+        v = bl / ref;
+    end
+else
+    v = t.(spec.col);
+end
+end
+
+
 function hg = render_overlays(axs, samples, specs, colors)
-% Draw per-sample overlays into the four axes; returns a numel(samples)x4
-% cell of graphics handles (used by the browse window to toggle visibility).
+% Draw per-sample histogram overlays into the four axes (used by the browse
+% window). Returns a numel(samples)x4 cell of graphics handles for toggling.
 n = numel(samples);
 hg = cell(n, 4);
 names = {samples.name};
@@ -382,41 +411,31 @@ for p = 1:4
     ax.FontSize = 10;
     spec = specs{p};
 
-    if strcmp(spec.type, 'hist')
-        % Shared bin edges over pooled finite data
-        pooled = [];
-        for si = 1:n
-            v = samples(si).tbl.(spec.col);
-            pooled = [pooled; v(isfinite(v))]; %#ok<AGROW>
-        end
-        if isempty(pooled)
-            edges = [0 1];
-        else
-            lo = min(pooled); hi = max(pooled);
-            if hi <= lo, hi = lo + 1; end
-            edges = linspace(lo, hi, 101);
-        end
-        for si = 1:n
-            v = samples(si).tbl.(spec.col);
-            v = v(isfinite(v));
-            N = histcounts(v, edges);
-            if sum(N) > 0, N = N / sum(N); end
-            hg{si, p} = histogram(ax, 'BinEdges', edges, 'BinCounts', N, ...
-                'FaceColor', colors(si, :), 'FaceAlpha', 0.35, ...
-                'EdgeAlpha', 0.2, 'DisplayName', names{si});
-        end
-        ylabel(ax, 'Fraction', 'FontSize', 11);
+    % Shared bin edges over pooled finite data
+    pooled = [];
+    for si = 1:n
+        v = values_for_spec(samples(si).tbl, spec);
+        pooled = [pooled; v(isfinite(v))]; %#ok<AGROW>
+    end
+    if isempty(pooled)
+        edges = [0 1];
     else
-        for si = 1:n
-            t = samples(si).tbl;
-            hg{si, p} = scatter(ax, t.(spec.xcol), t.(spec.ycol), 8, ...
-                colors(si, :), 'filled', 'MarkerFaceAlpha', 0.5, ...
-                'DisplayName', names{si});
-        end
-        ylabel(ax, spec.ylabel, 'FontSize', 11);
+        lo = min(pooled); hi = max(pooled);
+        if hi <= lo, hi = lo + 1; end
+        edges = linspace(lo, hi, 101);
+    end
+    for si = 1:n
+        v = values_for_spec(samples(si).tbl, spec);
+        v = v(isfinite(v));
+        N = histcounts(v, edges);
+        if sum(N) > 0, N = N / sum(N); end
+        hg{si, p} = histogram(ax, 'BinEdges', edges, 'BinCounts', N, ...
+            'FaceColor', colors(si, :), 'FaceAlpha', 0.35, ...
+            'EdgeAlpha', 0.2, 'DisplayName', names{si});
     end
 
     xlabel(ax, spec.xlabel, 'FontSize', 11);
+    ylabel(ax, 'Fraction', 'FontSize', 11);
     title(ax, spec.title, 'FontSize', 12);
     if p == 1 && n > 1
         lg = legend(ax, 'show', 'Location', 'northeast', 'FontSize', 8);
@@ -437,17 +456,28 @@ colors = lines(max(n, 1));
 
 gf = figure('Name', 'Set gate', 'NumberTitle', 'off', 'MenuBar', 'none', ...
     'ToolBar', 'none', 'Color', 'w', 'Resize', 'on', 'Units', 'pixels', ...
-    'Position', [0 0 1100 800], 'CloseRequestFcn', @(s,e) gate_close(s));
+    'Position', [0 0 1100 820], 'CloseRequestFcn', @(s,e) gate_close(s));
 movegui(gf, 'center');
 
-plot_panel = uipanel('Parent', gf, 'Units', 'normalized', ...
-    'Position', [0 0.13 1 0.87], 'BorderType', 'none', 'BackgroundColor', 'w');
-tl = tiledlayout(plot_panel, 2, 2, 'Padding', 'compact', 'TileSpacing', 'compact');
+% Manual 2x2 axes + per-plot x-limit boxes (normalized so they scale)
 axs = gobjects(1, 4);
+xlim_edits = cell(4, 2);
 for p = 1:4
-    axs(p) = nexttile(tl);
+    [axpos, lblpos, minpos, maxpos] = cell_layout(p);
+    ax = axes('Parent', gf, 'Units', 'normalized', 'Position', axpos);
+    hold(ax, 'on'); box(ax, 'on'); ax.FontSize = 10;
+    axs(p) = ax;
+
+    uicontrol(gf, 'Style', 'text', 'Units', 'normalized', 'Position', lblpos, ...
+        'String', 'x-lims:', 'BackgroundColor', 'w', 'FontSize', 8, ...
+        'HorizontalAlignment', 'left');
+    xlim_edits{p, 1} = uicontrol(gf, 'Style', 'edit', 'Units', 'normalized', ...
+        'Position', minpos, 'String', '', 'FontSize', 8, ...
+        'Tooltip', 'x min (blank = auto)', 'Callback', @(s,e) on_xlim_edit(gf, p));
+    xlim_edits{p, 2} = uicontrol(gf, 'Style', 'edit', 'Units', 'normalized', ...
+        'Position', maxpos, 'String', '', 'FontSize', 8, ...
+        'Tooltip', 'x max (blank = auto)', 'Callback', @(s,e) on_xlim_edit(gf, p));
 end
-render_overlays(axs, sel_samples, specs, colors);
 
 st = uicontrol(gf, 'Style', 'text', 'Units', 'normalized', ...
     'Position', [0.02 0.065 0.6 0.05], 'String', '', 'FontSize', 10, ...
@@ -456,14 +486,24 @@ st = uicontrol(gf, 'Style', 'text', 'Units', 'normalized', ...
 % State in appdata
 setappdata(gf, 'specs', specs);
 setappdata(gf, 'sel_samples', sel_samples);
+setappdata(gf, 'colors', colors);
 setappdata(gf, 'axs', axs);
-setappdata(gf, 'rois', cell(1, 4));
+setappdata(gf, 'xlim_edits', xlim_edits);
+setappdata(gf, 'xlims', cell(1, 4));      % per-plot [min max] (NaN = auto side)
+setappdata(gf, 'hg_gate', cell(n, 4));    % per-sample histogram handles
+setappdata(gf, 'rois', cell(1, 4));       % per-plot range gates
+setappdata(gf, 'hist_state', []);
 setappdata(gf, 'st_handle', st);
 setappdata(gf, 'applied', false);
 setappdata(gf, 'masks', {});
 setappdata(gf, 'done', false);
 
-labels = {'Gate: mass', 'Gate: baseline', 'Gate: slope', 'Gate: node dev'};
+for p = 1:4
+    render_plot(gf, p);
+end
+
+% Per-plot gate buttons
+labels = {'Gate: mass', 'Gate: norm baseline', 'Gate: slope', 'Gate: node dev'};
 bw = 0.145;
 for p = 1:4
     uicontrol(gf, 'Style', 'pushbutton', 'Units', 'normalized', ...
@@ -481,12 +521,7 @@ uicontrol(gf, 'Style', 'pushbutton', 'Units', 'normalized', ...
     'FontSize', 10, 'FontWeight', 'bold', 'Callback', @(s,e) gate_apply(gf));
 
 gate_update_status(gf);
-% Loop because drawrectangle internally calls uiresume on the same figure,
-% which would prematurely exit a single uiwait. Only exit when 'done' is
-% explicitly set by Apply, Back, or the window close button.
-while isvalid(gf) && ~getappdata(gf, 'done')
-    uiwait(gf);
-end
+uiwait(gf);
 
 if isvalid(gf)
     result.applied = getappdata(gf, 'applied');
@@ -499,58 +534,170 @@ end
 end
 
 
-% ---- ROI helpers (work for both drawrectangle objects and hist range structs) ----
-
-function tf = roi_is_set(r)
-if isempty(r), tf = false; return; end
-if isstruct(r), tf = strcmp(r.type, 'range'); return; end
-tf = isvalid(r);
+function [axpos, lblpos, minpos, maxpos] = cell_layout(p)
+% Normalized positions for one 2x2 cell: axes + x-limit control strip below.
+if any(p == [1 3]), x = 0.07; else, x = 0.55; end   % left / right column
+if any(p == [1 2]), yb = 0.58; else, yb = 0.17; end % top / bottom row
+w = 0.40;
+lblpos = [x,         yb, 0.095, 0.032];
+minpos = [x+0.105,   yb, 0.13,  0.035];
+maxpos = [x+0.255,   yb, 0.13,  0.035];
+axpos  = [x,         yb+0.065, w, 0.30];
 end
 
+
+function render_plot(gf, p)
+% (Re)draw the per-sample histogram overlays for one plot, re-binning within
+% the current x-limits and preserving any gate drawn on it.
+specs  = getappdata(gf, 'specs');
+sel    = getappdata(gf, 'sel_samples');
+colors = getappdata(gf, 'colors');
+axs    = getappdata(gf, 'axs');
+xlims  = getappdata(gf, 'xlims');
+hgg    = getappdata(gf, 'hg_gate');
+rois   = getappdata(gf, 'rois');
+ax = axs(p);
+spec = specs{p};
+n = numel(sel);
+
+% Delete old histogram handles for this plot (keep gate visuals)
+for si = 1:n
+    hstale = hgg{si, p};
+    if ~isempty(hstale) && isvalid(hstale)
+        delete(hstale);
+    end
+end
+
+% Per-sample finite values + pooled range
+vals = cell(1, n);
+pooled = [];
+for si = 1:n
+    v = values_for_spec(sel(si).tbl, spec);
+    v = v(isfinite(v));
+    vals{si} = v;
+    pooled = [pooled; v]; %#ok<AGROW>
+end
+if isempty(pooled)
+    dlo = 0; dhi = 1;
+else
+    dlo = min(pooled); dhi = max(pooled);
+    if dhi <= dlo, dhi = dlo + 1; end
+end
+
+% Resolve x-range (user override per side; NaN => data bound)
+lo = dlo; hi = dhi;
+if ~isempty(xlims{p})
+    if isfinite(xlims{p}(1)), lo = xlims{p}(1); end
+    if isfinite(xlims{p}(2)), hi = xlims{p}(2); end
+end
+if hi <= lo, hi = lo + 1; end
+edges = linspace(lo, hi, 101);
+
+for si = 1:n
+    N = histcounts(vals{si}, edges);
+    if sum(N) > 0, N = N / sum(N); end
+    hgg{si, p} = histogram(ax, 'BinEdges', edges, 'BinCounts', N, ...
+        'FaceColor', colors(si, :), 'FaceAlpha', 0.35, 'EdgeAlpha', 0.2, ...
+        'DisplayName', sel(si).name);
+end
+setappdata(gf, 'hg_gate', hgg);
+
+xlim(ax, [lo hi]);
+xlabel(ax, spec.xlabel, 'FontSize', 11);
+ylabel(ax, 'Fraction', 'FontSize', 11);
+title(ax, spec.title, 'FontSize', 12);
+if p == 1 && n > 1
+    lg = legend(ax, 'show', 'Location', 'northeast', 'FontSize', 8);
+    lg.AutoUpdate = 'off';
+    lg.Interpreter = 'none';
+end
+
+% Redraw the gate visual (if any) so it tracks the new y-limits/bins
+r = rois{p};
+if roi_is_set(r)
+    clear_roi(r);
+    g = draw_gate_visual(ax, r.lo, r.hi);
+    r.patch = g.patch;
+    r.lines = g.lines;
+    rois{p} = r;
+    setappdata(gf, 'rois', rois);
+end
+end
+
+
+function on_xlim_edit(gf, p)
+eds = getappdata(gf, 'xlim_edits');
+mn = str2double(eds{p, 1}.String);
+mx = str2double(eds{p, 2}.String);
+
+if isnan(mn) && isnan(mx)
+    new = [];                       % both blank => auto
+else
+    new = [mn mx];                  % NaN on either side => auto that side
+    if all(isfinite(new)) && new(2) <= new(1)
+        warndlg('x-max must be greater than x-min.', 'Invalid range');
+        return
+    end
+end
+
+xlims = getappdata(gf, 'xlims');
+xlims{p} = new;
+setappdata(gf, 'xlims', xlims);
+render_plot(gf, p);
+gate_update_status(gf);
+end
+
+
+% ---- Gate helpers -------------------------------------------------------
+
+function tf = roi_is_set(r)
+tf = ~isempty(r) && isstruct(r) && isfield(r, 'type') && strcmp(r.type, 'range');
+end
+
+
 function clear_roi(r)
-if isempty(r), return; end
-if isstruct(r)
+if isempty(r) || ~isstruct(r), return; end
+if isfield(r, 'lines')
     for k = 1:numel(r.lines)
         if ~isempty(r.lines{k}) && isvalid(r.lines{k}), delete(r.lines{k}); end
     end
-    if ~isempty(r.patch) && isvalid(r.patch), delete(r.patch); end
-else
-    if isvalid(r), delete(r); end
+end
+if isfield(r, 'patch') && ~isempty(r.patch) && isvalid(r.patch)
+    delete(r.patch);
 end
 end
 
-% -------------------------------------------------------------------------
+
+function g = draw_gate_visual(ax, lo, hi)
+l1 = xline(ax, lo, '--r', sprintf('%.3g', lo), 'FontSize', 8, ...
+    'HandleVisibility', 'off', 'LabelVerticalAlignment', 'bottom', ...
+    'LabelHorizontalAlignment', 'right');
+l2 = xline(ax, hi, '--b', sprintf('%.3g', hi), 'FontSize', 8, ...
+    'HandleVisibility', 'off', 'LabelVerticalAlignment', 'bottom', ...
+    'LabelHorizontalAlignment', 'left');
+yl = ax.YLim;
+pt = patch(ax, [lo hi hi lo], [yl(1) yl(1) yl(2) yl(2)], 'g', ...
+    'FaceAlpha', 0.12, 'EdgeColor', 'none', 'HandleVisibility', 'off');
+uistack(pt, 'bottom');
+g = struct('patch', pt);
+g.lines = {l1, l2};   % assign after construction to store the cell as-is
+end
+
 
 function gate_draw(gf, p)
 specs = getappdata(gf, 'specs');
-axs  = getappdata(gf, 'axs');
 rois = getappdata(gf, 'rois');
 
-% Cancel any pending histogram click mode and clear existing gate for this plot
-setappdata(gf, 'hist_state', []);
+% Reset any in-progress click mode and clear an existing gate on this plot
 set(gf, 'WindowButtonDownFcn', '');
 clear_roi(rois{p});
 rois{p} = [];
 setappdata(gf, 'rois', rois);
 
-spec = specs{p};
-if strcmp(spec.type, 'hist')
-    % Click-based: first click = lower cutoff, second click = upper cutoff
-    setappdata(gf, 'hist_state', struct('p', p, 'state', 0, 'lo', NaN, ...
-        'lines', {{}}, 'patch', []));
-    set(gf, 'WindowButtonDownFcn', @(s,e) gate_hist_click(gf, p));
-    st = getappdata(gf, 'st_handle');
-    st.String = sprintf('[%s]  Click to set lower cutoff', spec.title);
-else
-    % Scatter: interactive rectangle
-    roi = drawrectangle(axs(p), 'Color', [0.15 0.15 0.15], 'LineWidth', 1);
-    rois = getappdata(gf, 'rois');
-    rois{p} = roi;
-    setappdata(gf, 'rois', rois);
-    addlistener(roi, 'MovingROI', @(s,e) gate_update_status(gf));
-    addlistener(roi, 'ROIMoved', @(s,e) gate_update_status(gf));
-    gate_update_status(gf);
-end
+setappdata(gf, 'hist_state', struct('p', p, 'state', 0, 'lo', NaN, 'templine', []));
+set(gf, 'WindowButtonDownFcn', @(s,e) gate_hist_click(gf, p));
+st = getappdata(gf, 'st_handle');
+st.String = sprintf('[%s]  Click to set lower cutoff', specs{p}.title);
 end
 
 
@@ -559,7 +706,6 @@ if ~isvalid(gf), return; end
 hs = getappdata(gf, 'hist_state');
 if isempty(hs) || hs.p ~= p, return; end
 
-% Only respond to clicks within the target axes
 axs = getappdata(gf, 'axs');
 ax  = axs(p);
 clicked_ax = ancestor(gf.CurrentObject, 'axes');
@@ -571,43 +717,39 @@ if x < xl(1) || x > xl(2), return; end
 
 st    = getappdata(gf, 'st_handle');
 specs = getappdata(gf, 'specs');
-title = specs{p}.title;
+ttl   = specs{p}.title;
 
 if hs.state == 0
     hs.lo = x;
     hs.state = 1;
-    hs.lines{1} = xline(ax, x, '--r', sprintf('%.3g', x), ...
-        'LabelVerticalAlignment', 'bottom', 'LabelHorizontalAlignment', 'right', ...
-        'FontSize', 8, 'HandleVisibility', 'off');
-    st.String = sprintf('[%s]  Lower: %.4g  —  click to set upper cutoff', title, x);
-
-elseif hs.state == 1
-    if x <= hs.lo
-        st.String = sprintf('[%s]  Upper must be > lower (%.4g) — click again', title, hs.lo);
-        setappdata(gf, 'hist_state', hs);
-        drawnow; return
-    end
-    hs.hi = x;
-    hs.state = 2;
-    hs.lines{2} = xline(ax, x, '--b', sprintf('%.3g', x), ...
-        'LabelVerticalAlignment', 'bottom', 'LabelHorizontalAlignment', 'left', ...
-        'FontSize', 8, 'HandleVisibility', 'off');
-    yl = ax.YLim;
-    hs.patch = patch(ax, [hs.lo hs.hi hs.hi hs.lo], [yl(1) yl(1) yl(2) yl(2)], ...
-        'g', 'FaceAlpha', 0.12, 'EdgeColor', 'none', 'HandleVisibility', 'off');
-    uistack(hs.patch, 'bottom');
-
-    rois = getappdata(gf, 'rois');
-    rois{p} = struct('type', 'range', 'lo', hs.lo, 'hi', hs.hi, ...
-        'lines', {hs.lines}, 'patch', hs.patch);
-    setappdata(gf, 'rois', rois);
-    setappdata(gf, 'hist_state', []);
-    set(gf, 'WindowButtonDownFcn', '');
-    gate_update_status(gf);
+    hs.templine = xline(ax, x, '--r', sprintf('%.3g', x), 'FontSize', 8, ...
+        'HandleVisibility', 'off', 'LabelVerticalAlignment', 'bottom', ...
+        'LabelHorizontalAlignment', 'right');
+    st.String = sprintf('[%s]  Lower: %.4g  —  click to set upper cutoff', ttl, x);
+    setappdata(gf, 'hist_state', hs);
     drawnow;
     return
 end
-setappdata(gf, 'hist_state', hs);
+
+% state == 1: second click sets the upper cutoff
+if x <= hs.lo
+    st.String = sprintf('[%s]  Upper must be > lower (%.4g) — click again', ttl, hs.lo);
+    setappdata(gf, 'hist_state', hs);
+    drawnow;
+    return
+end
+if ~isempty(hs.templine) && isvalid(hs.templine)
+    delete(hs.templine);
+end
+g = draw_gate_visual(ax, hs.lo, x);
+r = struct('type', 'range', 'lo', hs.lo, 'hi', x, 'patch', g.patch);
+r.lines = g.lines;
+rois = getappdata(gf, 'rois');
+rois{p} = r;
+setappdata(gf, 'rois', rois);
+setappdata(gf, 'hist_state', []);
+set(gf, 'WindowButtonDownFcn', '');
+gate_update_status(gf);
 drawnow;
 end
 
@@ -637,17 +779,8 @@ for si = 1:n
     for p = 1:4
         r = rois{p};
         if ~roi_is_set(r), continue; end
-        spec = specs{p};
-        if strcmp(spec.type, 'hist')
-            v = t.(spec.col);
-            mask = mask & v >= r.lo & v <= r.hi;
-        else
-            pos = r.Position;   % [x y w h]
-            xr = sort([pos(1), pos(1) + pos(3)]);
-            yr = sort([pos(2), pos(2) + pos(4)]);
-            xv = t.(spec.xcol); yv = t.(spec.ycol);
-            mask = mask & xv >= xr(1) & xv <= xr(2) & yv >= yr(1) & yv <= yr(2);
-        end
+        v = values_for_spec(t, specs{p});
+        mask = mask & (v >= r.lo) & (v <= r.hi);
     end
     m{si} = mask;
 end
@@ -655,7 +788,7 @@ end
 
 
 function gate_update_status(gf)
-% Don't overwrite status text while histogram click mode is active
+% Don't overwrite status text while a histogram click sequence is active
 hs = getappdata(gf, 'hist_state');
 if ~isempty(hs) && hs.state < 2, return; end
 st   = getappdata(gf, 'st_handle');
@@ -690,7 +823,7 @@ end
 
 
 function gate_close(gf)
-if isvalid(gf) && isappdata(gf, 'done')
+if isvalid(gf)
     setappdata(gf, 'done', true);
 end
 uiresume(gf);
