@@ -80,7 +80,7 @@ for i = 1:numel(subdirs)
     % Find "*_mass_results" folders within this sample directory
     rd = dir(spath);
     rd = rd([rd.isdir]);
-    is_mr = ~cellfun('isempty', regexp({rd.name}, '_mass_results$', 'once'));
+    is_mr = ~cellfun('isempty', regexp({rd.name}, '^\d{8}\.\d{6}_mass_results$', 'once'));
     mr = rd(is_mr);
     if isempty(mr)
         fprintf('  Skipping "%s": no _mass_results folder.\n', sname);
@@ -463,19 +463,25 @@ movegui(gf, 'center');
 axs = gobjects(1, 4);
 xlim_edits = cell(4, 2);
 for p = 1:4
-    [axpos, lblpos, minpos, maxpos] = cell_layout(p);
+    [axpos, lblpos, minlpos, minpos, maxlpos, maxpos] = cell_layout(p);
     ax = axes('Parent', gf, 'Units', 'normalized', 'Position', axpos);
     hold(ax, 'on'); box(ax, 'on'); ax.FontSize = 10;
     axs(p) = ax;
 
     uicontrol(gf, 'Style', 'text', 'Units', 'normalized', 'Position', lblpos, ...
-        'String', 'x-lims:', 'BackgroundColor', 'w', 'FontSize', 8, ...
+        'String', 'x limits', 'BackgroundColor', 'w', 'FontSize', 10, ...
         'HorizontalAlignment', 'left');
+    uicontrol(gf, 'Style', 'text', 'Units', 'normalized', 'Position', minlpos, ...
+        'String', 'min:', 'BackgroundColor', 'w', 'FontSize', 9, ...
+        'HorizontalAlignment', 'right');
     xlim_edits{p, 1} = uicontrol(gf, 'Style', 'edit', 'Units', 'normalized', ...
-        'Position', minpos, 'String', '', 'FontSize', 8, ...
+        'Position', minpos, 'String', '', 'FontSize', 9, ...
         'Tooltip', 'x min (blank = auto)', 'Callback', @(s,e) on_xlim_edit(gf, p));
+    uicontrol(gf, 'Style', 'text', 'Units', 'normalized', 'Position', maxlpos, ...
+        'String', 'max:', 'BackgroundColor', 'w', 'FontSize', 9, ...
+        'HorizontalAlignment', 'right');
     xlim_edits{p, 2} = uicontrol(gf, 'Style', 'edit', 'Units', 'normalized', ...
-        'Position', maxpos, 'String', '', 'FontSize', 8, ...
+        'Position', maxpos, 'String', '', 'FontSize', 9, ...
         'Tooltip', 'x max (blank = auto)', 'Callback', @(s,e) on_xlim_edit(gf, p));
 end
 
@@ -534,15 +540,17 @@ end
 end
 
 
-function [axpos, lblpos, minpos, maxpos] = cell_layout(p)
+function [axpos, lblpos, minlpos, minpos, maxlpos, maxpos] = cell_layout(p)
 % Normalized positions for one 2x2 cell: axes + x-limit control strip below.
 if any(p == [1 3]), x = 0.07; else, x = 0.55; end   % left / right column
 if any(p == [1 2]), yb = 0.58; else, yb = 0.17; end % top / bottom row
 w = 0.40;
-lblpos = [x,         yb, 0.095, 0.032];
-minpos = [x+0.105,   yb, 0.13,  0.035];
-maxpos = [x+0.255,   yb, 0.13,  0.035];
-axpos  = [x,         yb+0.065, w, 0.30];
+lblpos  = [x,        yb, 0.075, 0.035];   % "x limits"
+minlpos = [x+0.080,  yb, 0.040, 0.032];   % "min:"
+minpos  = [x+0.122,  yb, 0.095, 0.035];   % min edit
+maxlpos = [x+0.222,  yb, 0.040, 0.032];   % "max:"
+maxpos  = [x+0.264,  yb, 0.095, 0.035];   % max edit
+axpos   = [x,        yb+0.095, w, 0.27];
 end
 
 
