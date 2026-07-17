@@ -1,23 +1,36 @@
 function formatted_date = get_creation_date(fpath)
-% Get creation date of a file and return it in a formatted string
-% 
+% Get a yyyymmdd date string for a data file. Cross-platform (macOS/Windows):
+% prefers a yyyyMMdd timestamp embedded at the start of the filename (the SMR
+% raw-data naming convention, e.g. "20260623.1154_frequencies"), and otherwise
+% falls back to the file system modification date.
+%
 % Arguments:
 %   fpath (str): path of file to examine
 % Returns:
-%   formatted_date (str): formatted string of creation date of file
+%   formatted_date (char): date as 'yyyymmdd'
 
-d = System.IO.File.GetCreationTime(fpath);
-if d.Month < 10
-    month_str = ['0' num2str(d.Month)];
-else
-    month_str = num2str(d.Month);
+[~, name, ext] = fileparts(fpath);
+fname = [name ext];
+
+% 1) Acquisition date embedded in the filename: leading 8-digit yyyyMMdd token
+tok = regexp(fname, '^\d{8}', 'match', 'once');
+if ~isempty(tok)
+    yr = str2double(tok(1:4));
+    mo = str2double(tok(5:6));
+    dy = str2double(tok(7:8));
+    if yr > 1990 && mo >= 1 && mo <= 12 && dy >= 1 && dy <= 31
+        formatted_date = tok;
+        return
+    end
 end
-if d.Day < 10
-    day_str = ['0' num2str(d.Day)];
-else
-    day_str = num2str(d.Day);
+
+% 2) Fall back to the file system date (modification time; available on all
+%    platforms via dir, unlike the Windows-only .NET creation-time call).
+d = dir(fpath);
+if isempty(d)
+    error('get_creation_date:notFound', 'File not found: %s', fpath);
 end
-formatted_date = [num2str(d.Year) month_str day_str];
+formatted_date = char(string(datetime(d(1).datenum, ...
+    'ConvertFrom', 'datenum'), 'yyyyMMdd'));
 
 end
-
