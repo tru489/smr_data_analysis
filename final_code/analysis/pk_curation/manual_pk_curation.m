@@ -184,7 +184,7 @@ uiwait(fig);
 
 if isvalid(fig)
     rejection_mask = getappdata(fig, 'rejection_mask');
-    close(fig);
+    delete(fig);
 end
 
 end

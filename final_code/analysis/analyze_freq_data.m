@@ -1,5 +1,5 @@
 function [datafull, pass_struct, init_time] = analyze_freq_data(run_params, ...
-    freqfile, timefile, vsfile, inv_peaks)
+    freqfile, timefile, vsfile, inv_peaks, max_segments)
 % Analyze frequency data to detect peaks.
 %
 % Arguments:
@@ -15,6 +15,11 @@ function [datafull, pass_struct, init_time] = analyze_freq_data(run_params, ...
 %       opposite direction. E.g. necessary in density traps where the
 %       second fluid is more dense than the particle being analyzed.
 %       Optional, defaults to 0.
+%   max_segments (double): stop after processing this many data segments
+%       instead of running to the end of the file. Used for quick preview
+%       runs. When finite, the final summary plot/save is skipped and the
+%       progress figure is left open (rather than closed) so it can be
+%       inspected. Optional, defaults to Inf (process the whole file).
 % Returns:
 %   datafull (array(double)): array of peakwise (not peakset-wise)
 %       unprocessed peak data. I treat columns as a black box and let
@@ -32,6 +37,7 @@ arguments
     timefile
     vsfile = NaN
     inv_peaks = 0
+    max_segments (1,1) double = Inf
 end
 
 if run_params.analysis_params.dispprogress || run_params.analysis_params.verbose
@@ -58,6 +64,7 @@ i = 0;
 datasize = run_params.backend.datasize;
 
 init_time = 0;
+preview_stop = false;
 while(1)
     % Flip to the next frequency data segment piece 8*datasize bytes ahead
     fseek(freqfile, i * 8 * datasize, 'bof');   % datatype double is 8bytes
@@ -93,9 +100,16 @@ while(1)
     end
     
     datafull = [datafull datalast];
-    
+
     i = i + 1; % Move to next segment
-    
+
+    if i >= max_segments
+        % Preview mode: stop early without finalizing/saving, and leave
+        % the progress figure open for inspection
+        preview_stop = true;
+        break
+    end
+
     % Plot peak heights from polynomial fitting for each individual peak
     if length(freq) < datasize % If loop reaches end of main file, stop
         if run_params.vis.disp_fig_windows
@@ -118,7 +132,8 @@ while(1)
 end
 pass_struct.peak_avg_time = pass_struct.peak_avg_time + init_time;
 
-
-close(gcf)
+if ~preview_stop
+    close(gcf)
+end
 
 end

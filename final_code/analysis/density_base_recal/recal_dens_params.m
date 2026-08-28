@@ -6,7 +6,8 @@ file_selection.dens_bl_cal = 1;
 file_selection.pmt_data = 0;
 file_selection.cc_data = 0;
 
-[parsed_files, data_dir, formatted_date] = parse_dir_contents(file_selection);
+[parsed_files, data_dir, formatted_date] = parse_dir_contents(file_selection, ...
+    "", run_params.dir_formatting.default_raw_data_dir);
 
 cal_params = parsed_files.mass_cal;
 mass_cal_factor = cal_params.cal_factor_pg_per_hz;

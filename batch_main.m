@@ -11,7 +11,8 @@ run_params.prefs.manual_curation = false;
 run_params.prefs.load_previous_curation = false;
 
 %% Select superdir
-superdir = uigetdir('A:\thomasu\raw_data', 'Select parent directory to batch analyze...');
+superdir = uigetdir(run_params.dir_formatting.default_raw_data_dir, ...
+    'Select parent directory to batch analyze...');
 if isequal(superdir, 0), error('No directory selected.'); end
 
 %% Collect immediate subdirectories

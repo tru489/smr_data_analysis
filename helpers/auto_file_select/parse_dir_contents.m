@@ -1,9 +1,9 @@
 function [parsed_files, dirpath, date] = parse_dir_contents(file_selection, ...
-    data_dir_arg)
+    data_dir_arg, default_dir)
 % Upon selection of a directory where data is stored, parses directory
 % contents to return relevant data/file handles. Regardless of file
 % selection, always returns SMR time and frequency file handles
-% 
+%
 % Arguments:
 %   file_selection (struct): preferences for file types required for
 %       certain analysis type. Always includes the following fields:
@@ -12,6 +12,10 @@ function [parsed_files, dirpath, date] = parse_dir_contents(file_selection, ...
 %           dens_bl_cal: density baseline calibration json file
 %           pmt_data: PMT frequency and time data binary file IDs
 %           cc_data: coulter counter .#m4 file
+%   data_dir_arg (string, optional): path to data directory. If omitted,
+%       a uigetdir dialog opens.
+%   default_dir (string, optional): starting directory for the uigetdir
+%       dialog (ignored if data_dir_arg is given).
 % Returns:
 %   parsed_files (struct): file data for parsed files. Contains the
 %       following fields (unused fields are set as NaN):
@@ -29,13 +33,14 @@ function [parsed_files, dirpath, date] = parse_dir_contents(file_selection, ...
 arguments
     file_selection
     data_dir_arg = ""
+    default_dir string = "A:\thomasu\raw_data"
 end
 
 % Get path of dir containing data
 disp('Select SMR binary data folder...')
 
 if data_dir_arg == ""
-    dirpath = uigetdir('A:\thomasu\raw_data', 'Select data folder...');
+    dirpath = uigetdir(default_dir, 'Select data folder...');
 else
     dirpath = data_dir_arg;
 end

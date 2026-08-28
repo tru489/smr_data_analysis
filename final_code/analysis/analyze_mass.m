@@ -21,7 +21,8 @@ file_selection.dens_bl_cal = 0;
 file_selection.pmt_data = 0;
 file_selection.cc_data = 0;
 
-[parsed_files, data_dir, formatted_date] = parse_dir_contents(file_selection, data_dir);
+[parsed_files, data_dir, formatted_date] = parse_dir_contents(file_selection, ...
+    data_dir, run_params.dir_formatting.default_raw_data_dir);
 
 freqfile = parsed_files.freq_id;
 timefile = parsed_files.smr_time_id;

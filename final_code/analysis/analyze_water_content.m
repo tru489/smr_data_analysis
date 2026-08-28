@@ -20,7 +20,8 @@ else
     file_selection.cc_data = 0;
 end
 
-[parsed_files, data_dir, formatted_date] = parse_dir_contents(file_selection);
+[parsed_files, data_dir, formatted_date] = parse_dir_contents(file_selection, ...
+    "", run_params.dir_formatting.default_raw_data_dir);
 
 freqfile = parsed_files.freq_id;
 timefile = parsed_files.smr_time_id;

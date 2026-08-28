@@ -110,6 +110,7 @@ vis:
 # --- Directory formatting ---
 dir_formatting:
   default_cal_path: "final_code/data_dir_formatting/default_cal_paths.json"  # relative to repo root
+  default_raw_data_dir: "D:/raw_data"  # starting dir for raw data folder-picker dialogs (main/batch_main); falls back to the repo root with a warning if it doesn't exist on this machine
 
 # --- Backend ---
 # Internal data processing parameters. Unlikely to need changing.
